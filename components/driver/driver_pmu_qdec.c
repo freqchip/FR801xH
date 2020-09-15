@@ -22,7 +22,8 @@
 */
 void pmu_qdec_init(void)
 {
-    ool_write(PMU_REG_QDEC_CTRL, ool_read(PMU_REG_QDEC_CTRL)|PMU_QDEC_DEB_LA_EN|PMU_QDEC_DEB_LB_EN|PMU_QDEC_DEB_LC_EN);
+    //ool_write(PMU_REG_QDEC_CTRL, ool_read(PMU_REG_QDEC_CTRL)|PMU_QDEC_DEB_LA_EN|PMU_QDEC_DEB_LB_EN|PMU_QDEC_DEB_LC_EN);
+    ool_write(PMU_REG_QDEC_CTRL, ool_read(PMU_REG_QDEC_CTRL)|PMU_QDEC_DEB_LA_EN|PMU_QDEC_DEB_LB_EN);
 }
 
 /*
@@ -65,7 +66,7 @@ void pmu_qdec_autorest_cnt_flag(bool flag_read_rest,bool flag_lc_rest)
 void pmu_qdec_set_pin(enum pmu_qdec_la_pin_t pin_a,enum pmu_qdec_lb_pin_t pin_b,enum pmu_qdec_lc_pin_t pin_c)
 {
     ool_write(PMU_REG_QDEC_PIN_MUX, (pin_a<<PMU_QDEC_LA_PIN_MUX_POS) | (pin_b<<PMU_QDEC_LB_PIN_MUX_POS));
-    ool_write(PMU_REG_QDEC_LC_PIN_MUX, pin_c);
+    //ool_write(PMU_REG_QDEC_LC_PIN_MUX, pin_c);
 }
 
 /*

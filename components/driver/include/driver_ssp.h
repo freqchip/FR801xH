@@ -27,6 +27,18 @@ enum ssp_cs_ctrl_op_t
     SSP_CS_DISABLE,
 };
 
+enum ssp_int_type_t {
+    SSP_INT_RX_FF   = (1<<0),
+    SSP_INT_TX_FF   = (1<<1),
+    SSP_INT_RX_FFOV = (1<<2),
+};
+
+enum ssp_int_status_t {
+    SSP_INT_STATUS_RX       = (1<<0),
+    SSP_INT_STATUS_TX       = (1<<1),
+    SSP_INT_STATUS_RX_FFOV  = (1<<2),
+};
+
 /*
  * PUBLIC FUNCTIONS (È«¾Öº¯Êý)
  */
@@ -131,6 +143,63 @@ void ssp_wait_send_end(void);
  * @return  None.
  */
 void ssp_init_(uint8_t bit_width, uint8_t frame_type, uint8_t ms, uint32_t bit_rate, uint8_t prescale, void (*ssp_cs_ctrl)(uint8_t));
+
+/*********************************************************************
+ * @fn      ssp_enable_interrupt
+ *
+ * @brief   set ssp interrupt condition.
+ *
+ * @param   ints  - reference enum ssp_int_type_t
+ *			
+ * @return  None.
+ */
+void ssp_enable_interrupt(uint8_t ints);
+
+/*********************************************************************
+ * @fn      ssp_disable_interrupt
+ *
+ * @brief   clear ssp interrupt condition.
+ *
+ * @param   ints  - reference enum ssp_int_type_t
+ *			
+ * @return  None.
+ */
+void ssp_disable_interrupt(uint8_t ints);
+
+/*********************************************************************
+ * @fn      ssp_get_isr_status
+ *
+ * @brief   get current interrupt status
+ *
+ * @param   None
+ * 
+ * @return  current status ,@ref ssp_int_status_t.
+ */
+__attribute__((section("ram_code"))) uint32_t ssp_get_isr_status(void);
+
+/*********************************************************************
+ * @fn      ssp_clear_isr_status
+ *
+ * @brief   used to clear interrupt status
+ *
+ * @param   status  - which status should be cleard, @ref ssp_int_status_t
+ *
+ * @return  None
+ */
+__attribute__((section("ram_code"))) void ssp_clear_isr_status(uint32_t status);
+
+/*********************************************************************
+ * @fn      ssp_put_data_to_fifo
+ *
+ * @brief   put data to send fifo, this function will return when all data have
+ *          been put into tx fifo or tx fifo is full
+ *
+ * @param   buffer  - data pointer to be send
+ *          length  - how many bytes to be send.
+ *
+ * @return  how many data have been put into tx fifo.
+ */
+__attribute__((section("ram_code"))) void ssp_put_data_to_fifo(uint8_t *buffer, uint16_t length);
 
 void ssp_test(uint8_t *buffer, uint32_t length);
 void ssp_get_data_(unsigned char* buf, uint32_t size);

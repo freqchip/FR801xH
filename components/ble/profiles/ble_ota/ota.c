@@ -37,6 +37,10 @@ static struct buffed_pkt
 } first_pkt = {0};
 uint8_t first_loop = false;
 static uint16_t at_data_idx;
+static bool ota_recving_data = false;
+static uint16_t ota_recving_data_index = 0;
+static uint16_t ota_recving_expected_length = 0;
+static uint8_t *ota_recving_buffer = NULL;
 
 extern uint8_t app_boot_get_storage_type(void);
 extern void app_boot_save_data(uint32_t dest, uint8_t *src, uint32_t len);
@@ -139,6 +143,11 @@ void ota_init(uint8_t conidx)
 void ota_deinit(uint8_t conidx)
 {
     ota_clr_buffed_pkt();
+
+    if(ota_recving_buffer != NULL) {
+        os_free(ota_recving_buffer);
+        ota_recving_buffer = NULL;
+    }
 }
 void __attribute__((weak)) ota_change_flash_pin(void)
 {
@@ -158,12 +167,31 @@ void app_otas_recv_data(uint8_t conidx,uint8_t *p_data,uint16_t len)
     if(first_loop)
     {
         first_loop = false;
-        gap_conn_param_update(conidx, 6, 6, 0, 500);
+        gap_conn_param_update(conidx, 9, 9, 0, 500);
         gatt_mtu_exchange_req(conidx);
+
+        if(ota_recving_buffer == NULL) {
+            ota_recving_buffer = os_malloc(512);
+        }
     }
     co_printf("app_otas_recv_data[%d]: %d, %d. %d\r\n",at_data_idx, gatt_get_mtu(conidx), len, cmd_hdr->cmd.write_data.length);
     show_reg(p_data,sizeof(struct app_ota_cmd_hdr_t),1);
     at_data_idx++;
+
+    // 支持手机端将包从应用层进行拆分的功能，而不是应用层发长包，L2CAP去拆分。
+    if(ota_recving_data) {
+        memcpy(ota_recving_buffer+ota_recving_data_index, p_data, len);
+        ota_recving_data_index += len;
+        ota_recving_expected_length -= len;
+        if(ota_recving_expected_length != 0) {
+            return;
+        }
+        ota_recving_data = false;
+        ota_recving_buffer[0] = OTA_CMD_WRITE_DATA;
+        p_data = ota_recving_buffer;
+        cmd_hdr = (struct app_ota_cmd_hdr_t *)ota_recving_buffer;
+    }
+    
     ota_change_flash_pin();
     wdt_feed();
 
@@ -215,6 +243,13 @@ void app_otas_recv_data(uint8_t conidx,uint8_t *p_data,uint16_t len)
                 app_otas_status.read_opcode = OTA_CMD_NULL;
             }
             break;
+        case OTA_CMD_NULL:
+            memcpy(ota_recving_buffer, p_data, len);
+            ota_recving_expected_length = cmd_hdr->cmd.write_data.length;
+            ota_recving_data_index = len;
+            ota_recving_data = true;
+            ota_recover_flash_pin();
+            return;
     }
 
     struct otas_send_rsp *req = os_malloc(sizeof(struct otas_send_rsp) + rsp_data_len);
@@ -392,6 +427,7 @@ void app_otas_recv_data(uint8_t conidx,uint8_t *p_data,uint16_t len)
 
     ota_gatt_report_notify(conidx,req->buffer,req->length);
     ota_recover_flash_pin();
+    os_free(req);
 }
 
 

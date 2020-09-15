@@ -89,6 +89,8 @@ void audio_encode_start(encode_param_t param)
         14      36
         21      50
         25      58
+        26      60
+        27      62
         29      66
 		    32      72
 				34			76

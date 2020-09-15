@@ -90,6 +90,26 @@ enum pmu_isr_enable_t
     PMU_ISR_BIT_ADKEY1_LOW =     CO_BIT(12),
     PMU_ISR_BIT_ADKEY1_HIGH =    CO_BIT(13),
 };
+enum charge_current_t
+{
+    CHG_CUR_29MA    =   0,
+    CHG_CUR_40MA    =   0x2,
+    CHG_CUR_72MA    =   0x4,
+    CHG_CUR_113MA   =   0x8,
+    CHG_CUR_152MA   =   0xC,
+    CHG_CUR_185MA   =   0x10,
+};
+
+enum charge_term_vol_t
+{
+    CHG_VOL_4_10V    =   0,
+    CHG_VOL_4_15V    =   1,
+    CHG_VOL_4_20V    =   2,
+    CHG_VOL_4_25V    =   3,
+    CHG_VOL_4_30V    =   4,
+    CHG_VOL_4_35V    =   5,
+    CHG_VOL_4_40V    =   6,
+};
 
 /*
  * GLOBAL VARIABLES
@@ -410,6 +430,19 @@ void pmu_set_led2_value(uint8_t value);
  * @return  None.
  */
 void pmu_set_led2_as_pwm(void);
+
+/*********************************************************************
+ * @fn      pmu_enable_charge
+ *
+ * @brief   enable charge function,and set charge current & voltage
+ *
+ * @param   cur - charge current, @ref enum charge_current_t
+ *          vol - charge terminal voltage, @ref enum charge_term_vol_t
+ *          en - true = enable charge, false = disable charge
+ *
+ * @return  None.
+ */
+void pmu_enable_charge(enum charge_current_t cur,enum charge_term_vol_t vol,bool en);
 
 #endif  //_DRIVER_PMU_H
 

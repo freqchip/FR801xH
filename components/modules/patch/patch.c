@@ -32,7 +32,8 @@ void disable_cache(void);
 int llc_patch_1(void);
 void platform_reset_patch(uint32_t error);
 void con_max_lat_calc_patch(void);
-
+uint8_t lld_con_llcp_tx_patch(uint8_t, void *);
+uint8_t lld_con_data_tx_patch(uint8_t, void *);
 /*
  * keil debug breakpoint will take place FPB entry at the beginning of patch table with increasing
  * direction, so use patch entry point start at the end of patch table with decreasing direction.
@@ -70,10 +71,10 @@ struct patch_element_t patch_elements[] =
     },
 #else
     [11] = {
-        .patch_pc = 0x00000001, // take place
+        .patch_pc = 0x00000001,
     },
     [10] = {
-        .patch_pc = 0x00000001, // take place
+        .patch_pc = 0x00000001,
     },
 #endif
     [9] = {

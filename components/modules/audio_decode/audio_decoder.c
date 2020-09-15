@@ -373,7 +373,8 @@ int audio_decode_task(os_event_t *param)
 }
 void audio_decoder_init(void)
 {
-    task_id_audio_decode = os_task_create(audio_decode_task);
+    if(task_id_audio_decode == TASK_ID_NONE)
+        task_id_audio_decode = os_task_create(audio_decode_task);
     decode_task_status = DECODER_STATE_IDLE;
     decoder_env.decoder_context = NULL;
 }

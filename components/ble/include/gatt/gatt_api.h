@@ -12,7 +12,7 @@
 * INCLUDES 
 */
 #include <stdint.h>
-
+#include <stdbool.h>
 #include "os_msg_q.h"
 
 /*
@@ -68,6 +68,7 @@ typedef enum
     GATTC_MSG_WRITE_REQ,        //!< GATT client write request
     GATTC_MSG_ATT_INFO_REQ,     //!< GATT client att information request
     GATTC_MSG_NTF_REQ,          //!< GATT client notification received
+    GATTC_MSG_IND_REQ,          //!< GATT client indication received
     GATTC_MSG_READ_IND,         //!< GATT client read response received
     GATTC_MSG_CMP_EVT,          //!< GATT client message complete event
     GATTC_MSG_LINK_CREATE,
@@ -354,6 +355,19 @@ void gatt_client_write_cmd(gatt_client_write_t write_att);
  * @return  None.
  */
 void gatt_client_enable_ntf(gatt_client_enable_ntf_t ntf_enable_att);
+
+/*********************************************************************
+ * @fn      gatt_client_enable_ntf_ind
+ *
+ * @brief   Enable notification / indication. 
+ *
+ * @param   gatt_client_enable_ntf_t   - client information.
+ *          ntf - true, notification is enalbe;     false,  notification is disalbe;         
+ *          ind - true, indication is enalbe;   false,  indication is disalbe;    
+ *
+ * @return  None.
+ */
+void gatt_client_enable_ntf_ind(gatt_client_enable_ntf_t ntf_enable_att,bool ntf, bool ind);
 
 /*********************************************************************
  * @fn      gatt_client_read

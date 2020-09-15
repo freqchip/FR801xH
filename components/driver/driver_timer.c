@@ -165,7 +165,7 @@ static uint8_t timer_calc_prescale(uint32_t count_us)
  *
  * @return  None.
  */
-void timer_run(uint32_t timer_addr)
+__attribute__((section("ram_code"))) void timer_run(uint32_t timer_addr)
 {
     volatile struct timer *timerp = (volatile struct timer *)timer_addr;
 
@@ -181,7 +181,7 @@ void timer_run(uint32_t timer_addr)
  *
  * @return  None.
  */
-void timer_stop(uint32_t timer_addr)
+__attribute__((section("ram_code"))) void timer_stop(uint32_t timer_addr)
 {
     volatile struct timer *timerp = (volatile struct timer *)timer_addr;
 
@@ -213,7 +213,7 @@ void timer_reload(uint32_t timer_addr)
  *
  * @return  None.
  */
-void timer_clear_interrupt(uint32_t timer_addr)
+__attribute__((section("ram_code"))) void timer_clear_interrupt(uint32_t timer_addr)
 {
     volatile struct timer *timerp = (volatile struct timer *)timer_addr;
 
@@ -251,6 +251,14 @@ uint32_t timer_get_load_value(uint32_t timer_addr)
 
     return timerp->load_value.load;
 }
+
+__attribute__((section("ram_code"))) void timer_set_load_value(uint32_t timer_addr, uint32_t load_value)
+{
+    volatile struct timer *timerp = (volatile struct timer *)timer_addr;
+
+    timerp->load_value.load = load_value;
+}
+
 
 /*********************************************************************
  * @fn      timer_init

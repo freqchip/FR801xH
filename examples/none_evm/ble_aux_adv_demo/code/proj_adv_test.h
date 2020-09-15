@@ -17,20 +17,20 @@
 /*
  * MACROS (∫Í∂®“Â)
  */
-#define TEST_ADV_MODE_UNDIRECT   (0)
-#define TEST_ADV_MODE_DIRECT     (0)
-#define TEST_ADV_MODE_HDC_DIRECT (0)
+#define TEST_ADV_MODE_UNDIRECT   (0)    //undirect connectable & scannable adv
+#define TEST_ADV_MODE_DIRECT     (0)    //Low duty direct connectable & non-scannable adv
+#define TEST_ADV_MODE_HDC_DIRECT (0)    //High duty direct connectable & non-scannable adv. 1.5ms interval
 
-#define TEST_ADV_MODE_EXTEND_CONN_UNDIRECT   (0)
-#define TEST_ADV_MODE_EXTEND_CONN_DIRECT     (0)
-#define TEST_ADV_MODE_EXTEND_NON_CONN_SCAN   (0)
-#define TEST_ADV_MODE_EXTEND_CONN_UNDIRECT_LONGRANGE   (0)
-#define TEST_ADV_MODE_EXTEND_CONN_DIRECT_LONGRANGE     (0)
-#define TEST_ADV_MODE_EXTEND_NON_CONN_SCAN_LONGRANGE   (0)
-#define TEST_ADV_MODE_PER_ADV_UNDIRECT       (0)
-#define TEST_ADV_MODE_PER_ADV_DIRECT         (0)
+#define TEST_ADV_MODE_EXTEND_CONN_UNDIRECT   (0)    //extended undirect connectable & non-scannable adv
+#define TEST_ADV_MODE_EXTEND_CONN_DIRECT     (0)    //extended direct connectable & non-scannable adv    
+#define TEST_ADV_MODE_EXTEND_NON_CONN_SCAN   (0)    //extended non-connectable & scannable adv
+#define TEST_ADV_MODE_EXTEND_CONN_UNDIRECT_LONGRANGE   (0)  //extended longrange undirect connectable & non-scannable adv
+#define TEST_ADV_MODE_EXTEND_CONN_DIRECT_LONGRANGE     (0)  //extended longrange direct connectable & non-scannable adv    
+#define TEST_ADV_MODE_EXTEND_NON_CONN_SCAN_LONGRANGE   (0)  //extended longrange non-connectable & scannable adv
+#define TEST_ADV_MODE_PER_ADV_UNDIRECT       (0)    //periodic undirect non-connectable & scannable adv
+#define TEST_ADV_MODE_PER_ADV_DIRECT         (0)    //periodic direct non-connectable & scannable adv
 
-#define TEST_ADV_MODE_UNDIRECT_WHITE_LIST         (0)
+#define TEST_ADV_MODE_UNDIRECT_WHITE_LIST         (0)   //undirect connectable & scannable adv with withlist
 #define TEST_ADV_MODE_UNDIRECT_DOUBLE_ADV         (1)
 
 

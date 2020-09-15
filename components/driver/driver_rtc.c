@@ -79,7 +79,7 @@ void rtc_alarm(enum rtc_idx_t rtc_idx, uint32_t count_ms)
     uint32_t tmp_high, tmp_low;
     uint32_t tmp, cnt;
     
-    rwip_sleep_mul_64(&tmp_low, &tmp_high, pmu_get_rc_clk(false), count_ms);
+    rwip_sleep_mul_64(&tmp_low, &tmp_high, *(volatile uint16_t *)0x200001ae, count_ms);
     cnt = rwip_sleep_div_64(tmp_low, tmp_high, 1000);
 
     tmp = ool_read32(PMU_REG_RTC_VALUE_0);

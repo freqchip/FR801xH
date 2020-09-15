@@ -27,7 +27,7 @@ __STATIC __INLINE void show_reg(uint8_t *data,uint32_t len,uint8_t dbg_on)
     if(len == 0 || (dbg_on==0)) return;
     for(; i<len; i++)
     {
-        co_printf("0x%02X ",data[i]);
+        co_printf("0x%02X,",data[i]);
     }
     co_printf("\r\n");
 }

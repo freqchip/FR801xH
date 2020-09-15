@@ -26,8 +26,9 @@ static void codec_hw_set_freq(uint8_t nValue)
 
 void codec_enable_adc(void)
 {
-    codec_write(0x15, codec_read(0x15) & 0xE0); //unmute mic
+    codec_write(0x15, codec_read(0x15) & 0xE0); //unmute mic    0xE0
     codec_write(0x12, codec_read(0x12) & 0xBB);
+    codec_write(0x0c, 0x1f);    //mic bias control
 }
 
 void codec_disable_adc(void)
@@ -74,7 +75,7 @@ void codec_init(uint8_t sample_rate)
     codec_write(0x1a, 0x00);
     codec_write(0x00, 0xf5);
     codec_write(0x25, 0x02);
-    codec_write(0x19, 0x2A);    //gain, 0x3F ==> noise is big;  0x1F ==> lower volume. result = stg2 * 4 + stg1 *10
+    codec_write(0x19, 0x1f);    //gain, 0x3F ==> noise is big;  0x1F ==> lower volume. result = stg2 * 4 + stg1 *10, 0x2A
     
     codec_write(0x09, 0x02);    //SLAVE_I2S
     codec_write(0x40, 0x81);    //CODEC_STEREO

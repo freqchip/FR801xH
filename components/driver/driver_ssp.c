@@ -40,9 +40,9 @@ struct ssp_cr0
 
 struct ssp_cr1
 {
-    u32 unused1:1;
-    u32 unused2:1;
-    u32 unused3:1;
+    u32 rie:1;
+    u32 tie:1;
+    u32 rorie:1;
 
     u32 lbm:1;  /* loop back mode */
     u32 sse:1;  /* synchronous serial port enable*/
@@ -78,6 +78,14 @@ struct ssp_cpsr
     u32 unused:24;
 };
 
+struct ssp_iir
+{
+    uint32_t ris:1;
+    uint32_t tis:1;
+    uint32_t roris:1;
+    uint32_t reserved:29;
+};
+
 struct ssp
 {
     struct ssp_cr0 ctrl0;
@@ -85,6 +93,7 @@ struct ssp
     struct ssp_dr data;
     struct ssp_sr status;
     struct ssp_cpsr clock_prescale;
+    struct ssp_iir iir;
 };
 
 struct ssp_env_t
@@ -551,6 +560,110 @@ void ssp_init_(uint8_t bit_width, uint8_t frame_type, uint8_t ms, uint32_t bit_r
 
     ssp_env.ssp_cs_ctrl = ssp_cs_ctrl;
 
+}
+
+/*********************************************************************
+ * @fn      ssp_enable_interrupt
+ *
+ * @brief   set ssp interrupt condition.
+ *
+ * @param   ints  - reference enum ssp_int_type_t
+ *			
+ * @return  None.
+ */
+void ssp_enable_interrupt(uint8_t ints)
+{
+    volatile struct ssp * const ssp = (volatile struct ssp *)SSP0_BASE;
+    
+    if(ints & SSP_INT_RX_FF) {
+        ssp->ctrl1.rie = 1;
+    }
+    if(ints & SSP_INT_TX_FF) {
+        ssp->ctrl1.tie = 1;
+    }
+    if(ints & SSP_INT_RX_FFOV) {
+        ssp->ctrl1.rorie = 1;
+    }
+}
+
+/*********************************************************************
+ * @fn      ssp_disable_interrupt
+ *
+ * @brief   clear ssp interrupt condition.
+ *
+ * @param   ints  - reference enum ssp_int_type_t
+ *			
+ * @return  None.
+ */
+void ssp_disable_interrupt(uint8_t ints)
+{
+    volatile struct ssp * const ssp = (volatile struct ssp *)SSP0_BASE;
+    
+    if(ints & SSP_INT_RX_FF) {
+        ssp->ctrl1.rie = 0;
+    }
+    if(ints & SSP_INT_TX_FF) {
+        ssp->ctrl1.tie = 0;
+    }
+    if(ints & SSP_INT_RX_FFOV) {
+        ssp->ctrl1.rorie = 0;
+    }
+}
+
+/*********************************************************************
+ * @fn      ssp_get_isr_status
+ *
+ * @brief   get current interrupt status
+ *
+ * @param   None
+ * 
+ * @return  current status ,@ref ssp_int_status_t.
+ */
+__attribute__((section("ram_code"))) uint32_t ssp_get_isr_status(void)
+{
+    volatile struct ssp * const ssp = (volatile struct ssp *)SSP0_BASE;
+    return *(volatile uint32_t *)&ssp->iir;
+}
+
+/*********************************************************************
+ * @fn      ssp_clear_isr_status
+ *
+ * @brief   used to clear interrupt status
+ *
+ * @param   status  - which status should be cleard, @ref ssp_int_status_t
+ *
+ * @return  None
+ */
+__attribute__((section("ram_code"))) void ssp_clear_isr_status(uint32_t status)
+{
+    volatile struct ssp * const ssp = (volatile struct ssp *)SSP0_BASE;
+    *(volatile uint32_t *)&ssp->iir = status;
+}
+
+/*********************************************************************
+ * @fn      ssp_put_data_to_fifo
+ *
+ * @brief   put data to send fifo, this function will return when all data have
+ *          been put into tx fifo or tx fifo is full
+ *
+ * @param   buffer  - data pointer to be send
+ *          length  - how many bytes to be send.
+ *
+ * @return  how many data have been put into tx fifo.
+ */
+__attribute__((section("ram_code"))) void ssp_put_data_to_fifo(uint8_t *buffer, uint16_t length)
+{
+    volatile struct ssp * const ssp = (volatile struct ssp *)SSP0_BASE;
+
+    for(uint16_t i=0; i<length; i++) {
+        *(volatile uint32_t *)&ssp->data = (uint32_t)*buffer++;
+    }
+}
+
+__attribute__((section("ram_code"))) __attribute__((weak)) void ssp_isr_ram(void)
+{
+    uint32_t status = ssp_get_isr_status();
+    ssp_clear_isr_status(status);
 }
 
 __attribute__((section("ram_code"))) void ssp_cs_ctrl_function(uint8_t op)

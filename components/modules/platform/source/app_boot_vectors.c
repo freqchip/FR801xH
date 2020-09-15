@@ -65,6 +65,7 @@ pdm_isr(void);
 void __attribute__ ((weak, alias ("Default_Handler")))
 uart1_isr(void);
 void SVC_Handler_ram (void);
+void ssp_isr_ram (void);
 // ----------------------------------------------------------------------------
 
 typedef void
@@ -112,7 +113,7 @@ pHandler __isr_vectors[] =
         timer1_isr_ram,
         uart0_isr_ram,
         uart1_isr,
-        0,
+        ssp_isr_ram,
         0,
         0,
         0,

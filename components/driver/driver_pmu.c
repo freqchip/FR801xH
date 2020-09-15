@@ -612,7 +612,7 @@ void pmu_disable_irq(uint16_t irqs)
  *
  * @return  None.
  */
-void pmu_clear_isr_state(uint16_t state_map)
+__attribute__((section("ram_code"))) void pmu_clear_isr_state(uint16_t state_map)
 {
     ool_write16(PMU_REG_ISR_CLR, state_map);
     co_delay_100us(1);
@@ -695,6 +695,30 @@ void pmu_set_lp_clk_src(enum pmu_lp_clk_src_t src)
         /* enable 32768 osc PD */
         ool_write(PMU_REG_OSC32K_OTD_CTRL, ool_read(PMU_REG_OSC32K_OTD_CTRL) | 0x01);
     }
+}
+/*********************************************************************
+ * @fn      pmu_enable_charge
+ *
+ * @brief   enable charge function,and set charge current & voltage
+ *
+ * @param   cur - charge current, @ref enum charge_current_t
+ *          vol - charge terminal voltage, @ref enum charge_term_vol_t
+ *          en - true = enable charge, false = disable charge
+ *
+ * @return  None.
+ */
+void pmu_enable_charge(enum charge_current_t cur,enum charge_term_vol_t vol,bool en)
+{
+    ool_write(0xA,0x15);
+    ool_write(0xC,0x55);
+
+    //BIT[5:0], charge current
+    // 00'0000:29mA; 00'0010:40mA; 00 0100:72mA; 00 1000:113mA; 00 1100:152mA; 01 0000:185mA
+    ool_write(0xB,(ool_read(0xB)&(~ 0x7F)) | (cur<<0) | (en<<6) );
+
+    //BIT[2:0], charge termination voltage control
+    // 000=4.1; 001=4.15; 010=4.2; 011=4.25; 100=4.3; 101=4.35; 110=4.4;
+    ool_write(0xD,(ool_read(0xD)&(~ 0x7)) | (vol<<0) );
 }
 
 /*********************************************************************

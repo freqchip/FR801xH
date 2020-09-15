@@ -195,7 +195,7 @@
  */
 typedef enum
 {
-    GAP_EVT_ALL_SVC_ADDED,          //!< All GATT servcie added
+    GAP_EVT_ALL_SVC_ADDED,          //!< All GATT servcie have been added
 
     GAP_EVT_SLAVE_CONNECT,          //!< Connected as slave role
     GAP_EVT_MASTER_CONNECT,         //!< Connected as master role
@@ -208,15 +208,16 @@ typedef enum
     GAP_EVT_SCAN_END,               //!< Scanning ended
     GAP_EVT_PER_SYNC_ESTABLISHED,   //!< Per_sync is established
     GAP_EVT_PER_SYNC_END,           //!< Periodic adv sync event ended
-    GAP_EVT_ADV_REPORT,             //!< Find a BLE device
-    GAP_EVT_CONN_END,               //!< Connecion procedure canceled
+    GAP_EVT_ADV_REPORT,             //!< Scan result report
+    GAP_EVT_CONN_END,               //!< Connecion action is ended
     GAP_EVT_PEER_FEATURE,           //!< Got peer device supported features
     GAP_EVT_MTU,                    //!< MTU exchange event
-    GAP_EVT_LINK_RSSI,              //!< Got peer device RSSI value
+    GAP_EVT_LINK_RSSI,              //!< Got RSSI value of link peer device
 
-    GAP_SEC_EVT_MASTER_AUTH_REQ,    //!< Authentication request
-    GAP_SEC_EVT_MASTER_ENCRYPT,     //!< Encryted as master role
-    GAP_SEC_EVT_SLAVE_ENCRYPT,      //!< Enrypted as slave role
+    GAP_SEC_EVT_MASTER_AUTH_REQ,    //!< As master role, got authentication request from slave
+    GAP_SEC_EVT_MASTER_ENCRYPT,     //!< Link is encryted as master role
+    GAP_SEC_EVT_MASTER_ENCRYPT_FAIL, //!< Link has encrytion fail as master role
+    GAP_SEC_EVT_SLAVE_ENCRYPT,      //!< Link is enrypted as slave role
 } gap_event_type_t;
 
 #define MAC_ADDR_LEN         6
@@ -297,8 +298,8 @@ typedef struct
 {
     uint8_t         evt_type;       //!< Bit field providing information about the received report (@see GAP_SCAN_EVT_TYPE_DEFINES)
     gap_mac_addr_t  src_addr;       //!< Target address (in case of a directed advertising report)
-    int8_t              tx_pwr;         //!< TX power (in dBm)
-    int8_t              rssi;           //!< RSSI (between -127 and +20 dBm)
+    int8_t          tx_pwr;         //!< TX power (in dBm)
+    int8_t          rssi;           //!< RSSI (between -127 and +20 dBm)
     uint16_t        length;         //!< Report length
     uint8_t         *data;          //!< Report data
 } gap_evt_adv_report_t;
@@ -333,6 +334,13 @@ typedef struct
     uint8_t auth;                   //!< Authentication level (@see gap_auth)
 } gap_sec_evt_master_auth_req_t;
 
+// Link has encryprtion failure as master role
+typedef struct
+{
+    uint8_t conidx;             //!< Connection index
+    uint8_t reason;             //!< Reason of enc fail
+} gap_evt_master_enc_fail_t;
+
 // GAT event structure
 typedef struct
 {
@@ -358,6 +366,7 @@ typedef struct
 
         gap_sec_evt_master_auth_req_t   auth_req;               //!< Master authentication request
         uint8_t                         master_encrypt_conidx;  //!< Connection index of encrypted link, role as master
+        gap_evt_master_enc_fail_t       master_encrypt_fail;    //!< encrption fail reason & conidx, role as master
         uint8_t                         slave_encrypt_conidx;   //!< Connection index of encrypted link, role as slave
     } param;
 } gap_event_t;
@@ -763,6 +772,22 @@ uint8_t gap_get_connect_num(void);
  * @return  None.
  */
 void gap_set_link_rssi_report(bool enable);
+
+/*********************************************************************
+ * @fn      gap_get_link_rssi
+ *
+ * @brief   Used to send a request to lower layer to get current rssi of link peer device.
+ *          The rssi report will be uploaded to user laye as GAP_EVENT:GAP_EVT_LINK_RSSI.
+ *          This function sample is:
+ *          case GAP_EVT_LINK_RSSI:
+ *              co_printf("link rssi %d\r\n",event->param.link_rssi);
+ *              break;
+ *
+ * @param   conidx  - connection index of the connection.
+ *
+ * @return  None.
+ */
+void gap_get_link_rssi(uint8_t conidx);
 
 /**********************************************************************
  * @fn      gap_conn_param_update

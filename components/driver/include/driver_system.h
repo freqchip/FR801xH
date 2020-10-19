@@ -387,5 +387,28 @@ void system_power_off(bool aldo_bypass);
  */
 void system_set_tx_power(enum rf_tx_power_t tx_power);
 
+/*********************************************************************
+ * @fn      system_optimize_power_consumption_set, this function has to
+ *          be called in function user_custom_parameters.
+ *
+ * @brief   used to enable or disable power consumption strategy.
+ *
+ * @param   en  - 1: enable, 0: disable. Default value is disable.
+ *
+ * @return  None.
+ */
+void system_optimize_power_consumption_set(uint8_t en);
+
+/*********************************************************************
+ * @fn      system_optimize_power_consumption_get
+ *
+ * @brief   get power consumption strategy status.
+ *
+ * @param   None.
+ *
+ * @return  1: enable, 0: disable.
+ */
+uint8_t system_optimize_power_consumption_get(void);
+
 #endif // _DRIVER_IOMUX_H
 

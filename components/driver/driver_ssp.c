@@ -660,12 +660,6 @@ __attribute__((section("ram_code"))) void ssp_put_data_to_fifo(uint8_t *buffer, 
     }
 }
 
-__attribute__((section("ram_code"))) __attribute__((weak)) void ssp_isr_ram(void)
-{
-    uint32_t status = ssp_get_isr_status();
-    ssp_clear_isr_status(status);
-}
-
 __attribute__((section("ram_code"))) void ssp_cs_ctrl_function(uint8_t op)
 {
     if(op == SSP_CS_ENABLE)
@@ -678,6 +672,8 @@ __attribute__((section("ram_code"))) void ssp_cs_ctrl_function(uint8_t op)
     }
 }
 
+
+#if 0
 __attribute__((section("ram_code"))) void ssp_test(uint8_t *buffer, uint32_t length)
 {
     //uint8_t test_buffer[530];
@@ -757,5 +753,5 @@ __attribute__((section("ram_code"))) void ssp_test(uint8_t *buffer, uint32_t len
     }
     #endif
 }
-
+#endif
 

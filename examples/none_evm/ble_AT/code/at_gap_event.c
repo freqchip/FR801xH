@@ -15,6 +15,7 @@
 #include "at_gap_event.h"
 #include "at_cmd_task.h"
 #include "at_recv_cmd.h"
+#include "hid_service.h"
 
 #include "ble_hl_error.h"
 #include "driver_system.h"
@@ -259,6 +260,7 @@ void proj_ble_gap_evt_func(gap_event_t *event)
             break;
         case GAP_SEC_EVT_SLAVE_ENCRYPT:
             co_printf("slave[%d]_encrypted\r\n",event->param.slave_encrypt_conidx);
+						hid_service_enable(event->param.slave_encrypt_conidx);
             at_slave_encrypted(event->param.slave_encrypt_conidx);
             break;
 

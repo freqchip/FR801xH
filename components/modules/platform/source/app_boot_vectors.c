@@ -64,8 +64,9 @@ void __attribute__ ((weak, alias ("Default_Handler")))
 pdm_isr(void);
 void __attribute__ ((weak, alias ("Default_Handler")))
 uart1_isr(void);
+void __attribute__ ((weak, alias ("Default_Handler")))
+ssp_isr_ram (void);
 void SVC_Handler_ram (void);
-void ssp_isr_ram (void);
 // ----------------------------------------------------------------------------
 
 typedef void

@@ -39,6 +39,13 @@
 #define GAP_ADV_MODE_PER_ADV_UNDIRECT       0x21
 #define GAP_ADV_MODE_PER_ADV_DIRECT         0x22
 
+/** @defgroup GAP_DISC_MODE define
+ * @{
+ */
+#define GAP_ADV_DISC_MODE_NON_DISC      0     /// Mode in non-discoverable
+#define GAP_ADV_DISC_MODE_GEN_DISC      1     /// Mode in general discoverable
+#define GAP_ADV_DISC_MODE_LIM_DISC      2     /// Mode in limited discoverable
+#define GAP_ADV_DISC_MODE_MAX           3
 
 /** @defgroup GAP_ADDR_TYPE_DEFINES GAP address type define
  * @{
@@ -379,6 +386,7 @@ typedef void(* gap_callback_func_t)(gap_event_t * event);
 typedef struct
 {
     uint8_t         adv_mode;               //!< Advertising mode, connectable/none-connectable, see @ GAP_ADV_MODE_DEFINES
+    uint8_t         disc_mode;              //!< Advertising discovery mode, see @defgroup GAP_DISC_MODE
     uint8_t         adv_addr_type;          //!< see @ GAP_ADDR_TYPE_DEFINES
     gap_mac_addr_t  peer_mac_addr;          //!< peer mac addr,used for direction adv
     uint8_t         phy_mode;               //!< see @GAP_PHY_VALUES
@@ -426,6 +434,7 @@ typedef struct
 {
     gap_mac_addr_t peer_addr;   //!<mac addr of bonded peer device
     uint8_t peer_irk[16];       //!<peer_irk
+    uint8_t peer_ltk[16];       //!<peer_irk
     uint8_t bond_flag;          //!<bond flag
 } gap_bond_info_t;
 // resolve address list
@@ -654,6 +663,17 @@ void gap_address_get(mac_addr_t *addr);
  * @return  None.
  */
 void gap_address_set(mac_addr_t *addr);
+/*********************************************************************
+ * @fn      gap_set_mtu
+ *
+ * @brief   Set max transfer unit length. default mtu value is 512.
+ *          typical value: 23 for core 4.0; 247 for core 4.2;  
+ *
+ * @param   mtu - value to be set
+ *
+ * @return  None.
+ */
+void gap_set_mtu(uint16_t mtu);
 /*********************************************************************
  * @fn      gap_set_wl
  *
@@ -974,6 +994,17 @@ void gap_security_req(uint8_t conidx);
  * @return  Point to buff of the lastest conn parameter.
  */
 conn_peer_param_t *gap_get_latest_conn_parameter(void);
+
+/**********************************************************************
+ * @fn      gap_get_latest_bond_idx
+ *
+ * @brief   Get bond idx of peer device in last connection.
+ *
+ * @param   None
+ *
+ * @return  Bond idx of device in last connection. rang[0: MAX_Bond_NUM-1]
+ */
+uint8_t gap_get_latest_bond_idx(void);
 
 #endif // end of #ifndef GAP_API_H
 

@@ -24,6 +24,28 @@
  * @return  None.
  */
 void *os_malloc(uint32_t size);
+/*********************************************************************
+ * @fn      os_calloc
+ *
+ * @brief   malloc a ram space with specfied size, real size = num * size
+ *
+ * @param   -num    how many blocks will be malloced
+ *			-size   ram length per block
+ *
+ * @return  None.
+ */
+void *os_calloc(uint32_t num,uint32_t size);
+/*********************************************************************
+ * @fn      os_realloc
+ *
+ * @brief   malloc a ram space with specfied size, and free old ram space .
+ *
+ * @param   -new_size    malloc space
+ *			-ptr	pointer to old ram space	
+ *
+ * @return  None.
+ */
+void *os_realloc(void *ptr,uint32_t new_size);
 
 /*********************************************************************
  * @fn      os_zalloc

@@ -42,7 +42,6 @@
                 import i2s_isr_ram
                 import exti_isr_ram					
                 import pdm_isr
-                import ssp_isr_ram
 
 
 
@@ -154,8 +153,11 @@ SVC_Handler_2
                 BX      LR
                 ENDP
 
-adc_isr         PROC
+Default_Handler PROC
                 EXPORT  adc_isr           [WEAK]
+                EXPORT  ssp_isr_ram       [WEAK]
+adc_isr
+ssp_isr_ram
                 B       .
                 ENDP
                 NOP

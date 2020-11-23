@@ -29,6 +29,8 @@
 
 #define PMU_REG_PKVDD_CTRL2         0x17
 
+#define PMU_REG_BG_CTRL             0x18
+
 #define PMU_REG_POFWARN_CTRL        0x19
 
 #define PMU_REG_RCOSC_CTRL_2        0x1c

@@ -24,6 +24,7 @@
 #include "driver_rtc.h"
 #include "driver_codec.h"
 #include "driver_flash.h"
+#include "driver_efuse.h"
 #include "flash_usage_config.h"
 
 
@@ -147,14 +148,22 @@ __attribute__((section("ram_code"))) void i2s_isr_ram(void)
  */
 void user_custom_parameters(void)
 {
+    struct chip_unique_id_t id_data;
+
+    efuse_get_chip_unique_id(&id_data);
     __jump_table.addr.addr[0] = 0xBD;
     __jump_table.addr.addr[1] = 0xAD;
     __jump_table.addr.addr[2] = 0xD0;
     __jump_table.addr.addr[3] = 0xF0;
-    __jump_table.addr.addr[4] = 0x80;
-    __jump_table.addr.addr[5] = 0x10;
+    __jump_table.addr.addr[4] = 0x17;
+    __jump_table.addr.addr[5] = 0xc0;
+    
+    id_data.unique_id[5] |= 0xc0; // random addr->static addr type:the top two bit must be 1.
+    memcpy(__jump_table.addr.addr,id_data.unique_id,6);
     __jump_table.system_clk = SYSTEM_SYS_CLK_48M;
     jump_table_set_static_keys_store_offset(JUMP_TABLE_STATIC_KEY_OFFSET);
+    
+    retry_handshake();
 }
 
 /*********************************************************************

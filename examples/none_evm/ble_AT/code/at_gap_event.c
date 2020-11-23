@@ -291,7 +291,7 @@ void at_cb_slave_connected(conn_peer_param_t *param)
         sprintf((char *)at_rsp,"+CONN:%d\r\nOK",param->conidx);
         at_send_rsp((char *)at_rsp);
     }
-    gap_security_req(param->conidx);
+    //gap_security_req(param->conidx);
 
     current_con_interval = LINK_INTERVAL_MIN;
     os_timer_init( &update_param_timer,param_timer_func,(void *)(param->conidx));

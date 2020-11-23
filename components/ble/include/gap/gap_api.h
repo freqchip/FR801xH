@@ -42,9 +42,9 @@
 /** @defgroup GAP_DISC_MODE define
  * @{
  */
-#define GAP_ADV_DISC_MODE_NON_DISC      0     /// Mode in non-discoverable
-#define GAP_ADV_DISC_MODE_GEN_DISC      1     /// Mode in general discoverable
-#define GAP_ADV_DISC_MODE_LIM_DISC      2     /// Mode in limited discoverable
+#define GAP_ADV_DISC_MODE_GEN_DISC      0     /// Mode in general discoverable
+#define GAP_ADV_DISC_MODE_LIM_DISC      1     /// Mode in limited discoverable
+#define GAP_ADV_DISC_MODE_NON_DISC      2     /// Mode in non-discoverable
 #define GAP_ADV_DISC_MODE_MAX           3
 
 /** @defgroup GAP_ADDR_TYPE_DEFINES GAP address type define
@@ -386,17 +386,17 @@ typedef void(* gap_callback_func_t)(gap_event_t * event);
 typedef struct
 {
     uint8_t         adv_mode;               //!< Advertising mode, connectable/none-connectable, see @ GAP_ADV_MODE_DEFINES
-    uint8_t         disc_mode;              //!< Advertising discovery mode, see @defgroup GAP_DISC_MODE
     uint8_t         adv_addr_type;          //!< see @ GAP_ADDR_TYPE_DEFINES
     gap_mac_addr_t  peer_mac_addr;          //!< peer mac addr,used for direction adv
     uint8_t         phy_mode;               //!< see @GAP_PHY_VALUES
-    uint16_t        adv_intv_min;           //!< Minimum advertising interval, (in unit of 625us). Must be greater than 20ms
-    uint16_t        adv_intv_max;           //!< Maximum advertising interval, (in unit of 625us). Must be greater than 20ms
+    uint16_t        adv_intv_min;           //!< Minimum advertising interval, (in unit of 625us). Must >=  32
+    uint16_t        adv_intv_max;           //!< Maximum advertising interval, (in unit of 625us). Must >=  32
     uint8_t         adv_chnl_map;           //!< Advertising channal map, 37, 38, 39, see @ GAP_ADVCHAN_DEFINES
     uint8_t         adv_filt_policy;        //!< Advertising filter policy, see @ GAP_ADV_FILTER_MODE_DEFINES
     uint8_t         adv_sid;                //!< Advertising set idx, for EXTENDED adv and PERIODIC ADV only, range:0~0xF
     uint16_t        per_adv_intv_min;       //!< Minimum periodic advertising interval (in unit of 1.25ms).. Must be greater than 20ms,for PERIODIC ADV only
     uint16_t        per_adv_intv_max;       //!< Maximum periodic advertising interval (in unit of 1.25ms). Must be greater than 20ms,for PERIODIC ADV only
+    uint8_t         disc_mode;              //!< Advertising discovery mode, see @defgroup GAP_DISC_MODE
 } gap_adv_param_t;
 
 // Gap scan parameters
@@ -619,6 +619,32 @@ void gap_start_conn(mac_addr_t *addr, uint8_t addr_type, uint16_t min_itvl, uint
 * @return   None.
 */
 void gap_start_conn_long_range(mac_addr_t *addr, uint8_t addr_type, uint16_t min_itvl, uint16_t max_itvl, uint16_t slv_latency, uint16_t timeout);
+
+/*********************************************************************
+* @fn       gap_start_conn_whitelist
+*
+* @brief    Start auto_connecting devices within whitelist. should call gap_set_wl(...) or gap_set_ral(...) before call this func.
+*
+* @param    addr        - peer device mac addr.
+*           addr_type   - peer device mac addr type.
+*           min_itvl    - minimum connection inteval. uint: 1.25ms
+*           max_itvl    - maximum connection inteval. uint: 1.25ms
+*           slv_latency - number of slave latency.
+*           timeout     - supervision timeout of the link. uint: 10ms
+*
+* @return   None.
+*
+* example:		
+    gap_mac_addr_t mac_set[1];
+    memcpy(mac_set[0].addr.addr,"\x0C\x0C\x0C\x0C\x0C\x0A",6);
+    mac_set[0].addr_type = 0;
+    gap_set_wl(&mac_set[0],1);	
+		
+    mac_addr_t peer_addr;
+	memcpy(peer_addr.addr,"\x00\x00\x00\x00\x00\x00",6);
+    gap_start_conn_whitelist(&peer_addr,0,6,6,0,400);
+*/
+void gap_start_conn_whitelist(mac_addr_t *addr, uint8_t addr_type, uint16_t min_itvl, uint16_t max_itvl, uint16_t slv_latency, uint16_t timeout);
 
 /*********************************************************************
 * @fn      gap_stop_conn

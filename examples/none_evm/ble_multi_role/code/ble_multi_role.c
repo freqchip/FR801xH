@@ -14,6 +14,7 @@
 #include "gatt_api.h"
 #include "driver_gpio.h"
 #include "simple_gatt_service.h"
+#include "ota_service.h"
 #include "ble_multi_role.h"
 
 #include "sys_utils.h"
@@ -372,6 +373,7 @@ static void mr_peripheral_init(void)
 {
     // Adding services to database
     sp_gatt_add_service();  
+//	ota_gatt_add_service();  
 }
 
 /*********************************************************************

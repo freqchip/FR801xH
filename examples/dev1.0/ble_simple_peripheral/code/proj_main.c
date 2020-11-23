@@ -68,20 +68,23 @@ __attribute__((section("ram_code"))) void pmu_gpio_isr_ram(void)
  */
 void user_custom_parameters(void)
 {
-	uint32_t data[3] = {0};
+    struct chip_unique_id_t id_data;
 
-    efuse_read(&data[0],&data[1],&data[2]);
+    efuse_get_chip_unique_id(&id_data);
     __jump_table.addr.addr[0] = 0xBD;
     __jump_table.addr.addr[1] = 0xAD;
     __jump_table.addr.addr[2] = 0xD0;
     __jump_table.addr.addr[3] = 0xF0;
     __jump_table.addr.addr[4] = 0x17;
-    __jump_table.addr.addr[5] = 0xc0; // random addr->static addr type:the top two bit must be 1.
-    if(data[0])
-        memcpy(__jump_table.addr.addr,(uint8_t *)&data[0],4);
+    __jump_table.addr.addr[5] = 0xc0;
+    
+    id_data.unique_id[5] |= 0xc0; // random addr->static addr type:the top two bit must be 1.
+    memcpy(__jump_table.addr.addr,id_data.unique_id,6);
     __jump_table.system_clk = SYSTEM_SYS_CLK_48M;
     __jump_table.system_option &= ~(SYSTEM_OPTION_SLEEP_ENABLE);//取消sleep模式
     jump_table_set_static_keys_store_offset(JUMP_TABLE_STATIC_KEY_OFFSET);
+    
+    retry_handshake();
 }
 
 /*********************************************************************

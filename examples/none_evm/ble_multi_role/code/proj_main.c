@@ -63,19 +63,22 @@ __attribute__((section("ram_code"))) void pmu_gpio_isr_ram(void)
  */
 void user_custom_parameters(void)
 {
-    uint32_t data[3] = {0};
+    struct chip_unique_id_t id_data;
 
-    efuse_read(&data[0],&data[1],&data[2]);
+    efuse_get_chip_unique_id(&id_data);
     __jump_table.addr.addr[0] = 0xBD;
     __jump_table.addr.addr[1] = 0xAD;
     __jump_table.addr.addr[2] = 0xD0;
     __jump_table.addr.addr[3] = 0xF0;
     __jump_table.addr.addr[4] = 0x17;
-    __jump_table.addr.addr[5] = 0xc0; // random addr->static addr type:the top two bit must be 1.
-    if(data[0])
-        memcpy(__jump_table.addr.addr,(uint8_t *)&data[0],4);
+    __jump_table.addr.addr[5] = 0xc0;
+    
+    id_data.unique_id[5] |= 0xc0; // random addr->static addr type:the top two bit must be 1.
+    memcpy(__jump_table.addr.addr,id_data.unique_id,6);
     __jump_table.system_clk = SYSTEM_SYS_CLK_48M;
     jump_table_set_static_keys_store_offset(JUMP_TABLE_STATIC_KEY_OFFSET);
+    
+    retry_handshake();
 }
 
 /*********************************************************************
@@ -115,21 +118,9 @@ __attribute__((section("ram_code"))) void user_entry_after_sleep_imp(void)
     system_set_port_mux(GPIO_PORT_A, GPIO_BIT_2, PORTA2_FUNC_UART1_RXD);
     system_set_port_mux(GPIO_PORT_A, GPIO_BIT_3, PORTA3_FUNC_UART1_TXD);
     
-    system_sleep_disable();
-
-    if(__jump_table.system_option & SYSTEM_OPTION_ENABLE_HCI_MODE)
-    {
-        system_set_port_pull(GPIO_PA4, true);
-        system_set_port_mux(GPIO_PORT_A, GPIO_BIT_4, PORTA4_FUNC_UART0_RXD);
-        system_set_port_mux(GPIO_PORT_A, GPIO_BIT_5, PORTA5_FUNC_UART0_TXD);
-        uart_init(UART0, BAUD_RATE_115200);
-        NVIC_EnableIRQ(UART0_IRQn);
-
-        system_sleep_disable();
-    }
-
+    //system_sleep_disable();
     uart_init(UART1, BAUD_RATE_115200);
-    NVIC_EnableIRQ(UART1_IRQn);
+    //NVIC_EnableIRQ(UART1_IRQn);
 
     // Do some things here, can be uart print
 
@@ -169,22 +160,6 @@ void user_entry_before_ble_init(void)
     system_set_port_mux(GPIO_PORT_A, GPIO_BIT_2, PORTA2_FUNC_UART1_RXD);
     system_set_port_mux(GPIO_PORT_A, GPIO_BIT_3, PORTA3_FUNC_UART1_TXD);
     uart_init(UART1, BAUD_RATE_115200);    
- 
-    if(__jump_table.system_option & SYSTEM_OPTION_ENABLE_HCI_MODE)
-    {
-        /* use PC4 and PC5 for HCI interface */
-        system_set_port_pull(GPIO_PA4, true);
-        system_set_port_mux(GPIO_PORT_A, GPIO_BIT_4, PORTA4_FUNC_UART0_RXD);
-        system_set_port_mux(GPIO_PORT_A, GPIO_BIT_5, PORTA5_FUNC_UART0_TXD);
-    }
-
-    /* used for debug, reserve 3S for j-link once sleep is enabled. */
-    if(__jump_table.system_option & SYSTEM_OPTION_SLEEP_ENABLE)
-    {
-        co_delay_100us(10000);
-        co_delay_100us(10000);
-        co_delay_100us(10000);
-    }
 }
 
 /*********************************************************************
@@ -203,6 +178,20 @@ void user_entry_after_ble_init(void)
 {
     co_printf("BLE Multi Role\r\n");
 
+#if 1
+    system_sleep_disable();
+#else
+    if(__jump_table.system_option & SYSTEM_OPTION_SLEEP_ENABLE)
+    {
+        co_printf("\r\na");
+        co_delay_100us(10000);
+        co_printf("\r\nb");
+        co_delay_100us(10000);
+        co_printf("\r\nc");
+        co_delay_100us(10000);
+        co_printf("\r\nd");
+    }
+#endif
     // User task initialization, for buttons.
     user_task_init();
 

@@ -394,6 +394,7 @@ void at_init_advertising_parameter(void)
 
     gap_adv_param_t adv_param;
     adv_param.adv_mode = GAP_ADV_MODE_UNDIRECT;
+    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
@@ -945,7 +946,8 @@ void at_recv_cmd_handler(struct recv_cmd_t *param)
             sprintf((char *)at_rsp,"+Z\r\nOK");
             at_send_rsp((char *)at_rsp);
             uart_finish_transfers(UART0);
-            NVIC_SystemReset();
+            //NVIC_SystemReset();
+            platform_reset_patch(0);
         }
         break;
         case AT_CMD_IDX_CLR_BOND:

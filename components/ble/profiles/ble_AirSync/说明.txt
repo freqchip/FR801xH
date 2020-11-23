@@ -1,0 +1,20 @@
+官网网址：https://iot.weixin.qq.com/wiki/document-6_1.html
+
+使用步骤：
+1 Airsync_service.c&h 文件路径：\components\ble\profiles\ble_AirSync
+在入口函数void user_entry_after_ble_init(void) 内调用 airsync_gatt_add_service();
+
+2 使用void airsync_start_advertising(uint16_t duration)函数开启广播。
+需要注意的地方，广播内部包含: 
+serviceID:0xFEE7; 
+manufacturer字段，如果普通广播，要大于等于8字节长度，以MAC地址结尾。 头2字节为company ID。
+如果确认广播，要大于等于8字节长度，以0xfe 0x01 0x01 + MAC地址（6字节）结尾。 头2字节为company ID。
+
+2 Airsync_service.c 内部接收消息的地方在这个函数
+void airsync_pkt_hdl(uint8_t conidx, uint8_t *buf, uint16_t len)
+
+4 回复消息使用
+void airsync_send_rsp(uint8_t conidx, uint16_t cmd_id,uint8_t * rsp_value, uint16_t len)
+
+5 微信不做任何包的解析动作，直接将接收到的包传给 厂商服务器。 然后把厂商服务器的包传给设备。
+所以需要厂商使用JSAPI，自建一个服务。 参考官网地址的说明使用JSAPI

@@ -70,12 +70,23 @@ struct patch_element_t patch_elements[] =
         .replace_function = ke_free_user,
     },
 #else
+#if 0
     [11] = {
         .patch_pc = 0x00000001,
     },
     [10] = {
         .patch_pc = 0x00000001,
     },
+#else
+    [10] = {
+        .patch_pc = 0x0001126a, 
+        .replace_function = lld_con_data_tx_patch,
+    },
+    [11] = {
+        .patch_pc = 0x000118f6,
+        .replace_function = lld_con_llcp_tx_patch,
+    },
+#endif
 #endif
     [9] = {
         .patch_pc = 0x00012f30, // disable LLM_CH_MAP_TO temporary
@@ -205,7 +216,7 @@ __attribute__((section("ram_code"))) void low_power_save_entry_imp(uint8_t type)
         /* set BUCK voltage to higher level */
         ool_write(PMU_REG_BUCK_CTRL1, 0x45);
         /* set DLDO voltage to higher level */
-        ool_write(PMU_REG_DLDO_CTRL, 0x62);
+        ool_write(PMU_REG_DLDO_CTRL, (0x72 & 0xf8) | (dldo_value_org & 0x07));
 
         /* set cs pin of internal flash in high level */
         //pmu_gpio_set_dir(GPIO_PORT_B, GPIO_BIT_0, GPIO_DIR_OUT);
@@ -257,7 +268,12 @@ __attribute__((section("ram_code"))) void low_power_restore_entry_imp(uint8_t ty
     {
         /* handle the cs control to QSPI controller */
         //pmu_gpio_set_dir(GPIO_PORT_B, GPIO_BIT_0, GPIO_DIR_IN);
-        pmu_calibration_start(PMU_CALI_SRC_LP_RC, __jump_table.lp_clk_calib_cnt);
+#ifndef CFG_HCI_CODE
+        extern uint8_t pmu_clk_src; // 0: internal RC, 1: external 32768
+        if(pmu_clk_src == 0) {
+            pmu_calibration_start(PMU_CALI_SRC_LP_RC, __jump_table.lp_clk_calib_cnt);
+        }
+#endif        
         
         if((ool_read(PMU_REG_KEYSCAN_CTRL) & PMU_KEYSCAN_EN)
            && ((pmu_get_isr_state() & PMU_ISR_KEYSCAN_STATE) == 0))

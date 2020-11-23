@@ -27,6 +27,7 @@ void pmu_disable_isr(uint8_t isr_map);
 void pmu_disable_isr2(uint8_t isr_map);
 uint16_t pmu_get_isr_state(void);
 
+uint8_t adc_ref_internal_trim = 80;
 
 /*********************************************************************
  * @fn      pmu_set_debounce_clk
@@ -367,6 +368,53 @@ void pmu_set_sys_power_mode(enum pmu_sys_pow_mode_t mode)
 }
 
 /*********************************************************************
+ * @fn      pmu_bg_trim
+ *
+ * @brief   do bg triming.
+ *
+ * @param   trim_value  - read from efuse bit[31:0]
+ *
+ * @return  None.
+ */
+void pmu_bg_trim(uint32_t trim_value)
+{
+    uint8_t bfb_trim;
+    const uint16_t bfb_trim_value_table[] = {1337,1362,1387,1412,1437,1462,1487,1512,1537,1562,1587,1612,1637,1662,1687,1712,};
+    uint16_t bfb_value, bg_value, bg_diff;
+    uint8_t bg_config;
+#define BG_DEFAULT_CONFIG           8
+
+    bfb_trim = (uint8_t)((trim_value>>4)&0xf);
+    bfb_value = bfb_trim_value_table[((bfb_trim & 0x01) << 3) | ((bfb_trim & 0x02) << 1) | ((bfb_trim & 0x04) >> 1) | ((bfb_trim & 0x08) >> 3)];
+    bg_value = (bfb_value * 4) / 5; // bg/1.2 = bfb/1.5
+    if(bg_value > 1200) {
+        bg_diff = bg_value - 1200;
+        bg_diff <<= 1;
+        bg_diff /= 25;
+        if(bg_diff >= BG_DEFAULT_CONFIG) {
+            bg_config = 0;
+        }
+        else {
+            bg_config = BG_DEFAULT_CONFIG - bg_diff;
+        }
+        adc_ref_internal_trim -= (BG_DEFAULT_CONFIG - bg_config);
+    }
+    else {
+        bg_diff = 1200 - bg_value;
+        bg_diff <<= 1;
+        bg_diff /= 25;
+        if(bg_diff >= BG_DEFAULT_CONFIG) {
+            bg_config = 0xf;
+        }
+        else {
+            bg_config = BG_DEFAULT_CONFIG + bg_diff;
+        }
+        adc_ref_internal_trim += (BG_DEFAULT_CONFIG - bg_config);
+    }
+    ool_write(PMU_REG_BG_CTRL, (ool_read(PMU_REG_BG_CTRL) & 0xf0) | bg_config);
+}
+
+/*********************************************************************
  * @fn      pmu_sub_init
  *
  * @brief   pmu init procedure, sleep control, etc.
@@ -394,7 +442,7 @@ void pmu_sub_init(void)
     /* change BUCK setting for better sensitivity performance */
     ool_write(PMU_REG_BUCK_CTRL0, 0x40);
     /* set BUCK voltage to min */
-    ool_write(PMU_REG_BUCK_CTRL1, 0x05);
+    ool_write(PMU_REG_BUCK_CTRL1, 0x25);
 
     /* set DLDO voltage to min */
     //ool_write(PMU_REG_DLDO_CTRL, 0x42);
@@ -429,14 +477,12 @@ void pmu_sub_init(void)
         else {
             ool_write(PMU_REG_PKVDD_CTRL2, (ool_read(PMU_REG_PKVDD_CTRL2) & 0xF0) | (0x0a-dldo_v/2));
         }
-        ool_write(PMU_REG_DLDO_CTRL, 0x42 | (3-dldo_v/4));
     }
     else {
         ool_write(PMU_REG_PKVDD_CTRL2, (ool_read(PMU_REG_PKVDD_CTRL2) & 0xF0) | 0x07);
-
-        /* set DLDO voltage to min */
-        ool_write(PMU_REG_DLDO_CTRL, 0x42);
     }
+    /* set DLDO voltage to lower value */
+    ool_write(PMU_REG_DLDO_CTRL, 0x62);
     #endif  // CFG_FT_CODE
 
     /*
@@ -546,6 +592,7 @@ void pmu_sub_init(void)
     ool_write(PMU_REG_DIAG_SEL, 0x42);
 #endif
 
+    pmu_bg_trim(data0);
 }
 
 /*********************************************************************
@@ -681,12 +728,15 @@ void pmu_set_aldo_voltage(enum pmu_aldo_work_mode_t mode, enum pmu_aldo_voltage_
  */
 void pmu_set_lp_clk_src(enum pmu_lp_clk_src_t src)
 {
+    extern uint8_t pmu_clk_src; // 0: internal RC, 1: external 32768
     if(src == PMU_LP_CLK_SRC_EX_32768)
     {
         /* disalbe 32768 osc PD */
         ool_write(PMU_REG_OSC32K_OTD_CTRL, ool_read(PMU_REG_OSC32K_OTD_CTRL) & 0xfe);
         /* set clock source to external 32768 */
         ool_write(PMU_REG_CLK_CONFIG, (ool_read(PMU_REG_CLK_CONFIG) & (~PMU_SYS_CLK_SEL_MSK)) | 0x80);
+
+        pmu_clk_src = 1;
     }
     else
     {
@@ -694,6 +744,8 @@ void pmu_set_lp_clk_src(enum pmu_lp_clk_src_t src)
         ool_write(PMU_REG_CLK_CONFIG, (ool_read(PMU_REG_CLK_CONFIG) & (~PMU_SYS_CLK_SEL_MSK)) | 0x40);
         /* enable 32768 osc PD */
         ool_write(PMU_REG_OSC32K_OTD_CTRL, ool_read(PMU_REG_OSC32K_OTD_CTRL) | 0x01);
+
+        pmu_clk_src = 0;
     }
 }
 /*********************************************************************

@@ -52,6 +52,9 @@ int ascii_strn2val( const char str[], char base, char n);
 
 void system_prevent_sleep_clear(void);
 void system_prevent_sleep_set(void);
+
+__attribute__((section("ram_code"))) void retry_handshake(void);
+
 #endif  //_SYS_UTILS_H
 
 

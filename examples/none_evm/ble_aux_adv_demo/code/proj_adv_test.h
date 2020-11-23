@@ -30,8 +30,8 @@
 #define TEST_ADV_MODE_PER_ADV_UNDIRECT       (0)    //periodic undirect non-connectable & scannable adv
 #define TEST_ADV_MODE_PER_ADV_DIRECT         (0)    //periodic direct non-connectable & scannable adv
 
-#define TEST_ADV_MODE_UNDIRECT_WHITE_LIST         (0)   //undirect connectable & scannable adv with withlist
-#define TEST_ADV_MODE_UNDIRECT_DOUBLE_ADV         (1)
+#define TEST_ADV_MODE_UNDIRECT_WHITE_LIST         (1)   //undirect connectable & scannable adv with withlist
+#define TEST_ADV_MODE_UNDIRECT_DOUBLE_ADV         (0)
 
 
 #define TEST_BOARD_ADV                  (1)

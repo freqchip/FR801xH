@@ -102,19 +102,6 @@ static void app_at_recv_cmd_A(uint8_t sub_cmd, uint8_t *data)
             *(uint8_t *)(MODEM_BASE + ascii_strn2val((const char *)&data[0], 16, 2)) = ascii_strn2val((const char *)&data[3], 16, 2);
             co_printf("OK\r\n");
             break;
-        case 'R':
-            system_set_port_mux(GPIO_PORT_C, GPIO_BIT_5, PORTC5_FUNC_C5);
-            gpio_set_dir(GPIO_PORT_C, GPIO_BIT_5, GPIO_DIR_OUT);
-            gpio_portc_write(gpio_portc_read() & (~(1<<5)));
-            #if 0
-            gpio_portc_write(gpio_portc_read() | ((1<<5)));
-            flash_read(0, FLASH_READ_TEST_LENGTH, flash_read_test_buffer);
-            gpio_portc_write(gpio_portc_read() & (~(1<<5)));
-            #endif
-            gpio_portc_write(gpio_portc_read() | ((1<<5)));
-            ssp_test((uint8_t *)ascii_strn2val((const char *)&data[0], 16, 8), 240*240*2);
-            gpio_portc_write(gpio_portc_read() & (~(1<<5)));
-            break;
         case 'S':
             co_printf("VAL: 0x%02x.\r\n", frspim_rd(FR_SPI_RF_COB_CHAN, ascii_strn2val((const char *)&data[0], 16, 2), 1));
             break;

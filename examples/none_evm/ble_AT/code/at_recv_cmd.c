@@ -430,11 +430,11 @@ void at_init(void)
 #define AT_INFO_FLASH_BASE_ADDR     (USER_FLASH_BASE_ADDR)
 
 #define  WRITE_CNT_OFFSET ( 0 )
-#define  DEV_NAME_OFFSET  ( WRITE_CNT_OFFSET + sizeof(uint16_t) )
-#define  UART_PARAM_OFFSET  ( DEV_NAME_OFFSET + (LOCAL_NAME_MAX_LEN) )
-#define  DEFAULT_INFO_OFFSET    ( UART_PARAM_OFFSET + sizeof(uart_param_t) )
-#define  MAC_ADDR_OFFSET  ( DEFAULT_INFO_OFFSET + sizeof(default_info_t) )
-#define  PEER_MAC_ADDR_OFFSET  ( MAC_ADDR_OFFSET + sizeof(mac_addr_t) )
+#define  DEV_NAME_OFFSET  ( WRITE_CNT_OFFSET + sizeof(uint16_t) )   //2
+#define  UART_PARAM_OFFSET  ( DEV_NAME_OFFSET + (LOCAL_NAME_MAX_LEN) )  //20
+#define  DEFAULT_INFO_OFFSET    ( UART_PARAM_OFFSET + sizeof(uart_param_t) )    //28
+#define  MAC_ADDR_OFFSET  ( DEFAULT_INFO_OFFSET + sizeof(default_info_t) )  //36
+#define  PEER_MAC_ADDR_OFFSET  ( MAC_ADDR_OFFSET + sizeof(mac_addr_t) )     //42
 #define  SPSS_UUID_OFFSET  ( PEER_MAC_ADDR_OFFSET + sizeof(struct at_conn_peer_param) )
 
 /*********************************************************************

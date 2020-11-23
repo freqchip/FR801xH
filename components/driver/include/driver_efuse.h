@@ -13,6 +13,10 @@
  */
 #include <stdint.h>
 
+struct chip_unique_id_t {
+    uint8_t unique_id[6];
+};
+
 /*********************************************************************
  * @fn      efuse_write
  *
@@ -38,6 +42,17 @@ void efuse_write(uint32_t data0, uint32_t data1, uint32_t data2);
  * @return  None.
  */
 void efuse_read(uint32_t *data0, uint32_t *data1, uint32_t *data2);
+
+/*********************************************************************
+ * @fn      efuse_get_chip_unique_id
+ *
+ * @brief   Calculate the unique ID of the chip based on the read value form efuse.
+ *
+ * @param   id_buff
+ *
+ * @return  None.
+ */
+void efuse_get_chip_unique_id(struct chip_unique_id_t * id_buff);
 
 #endif  // _DRIVER_EFUSE_H
 

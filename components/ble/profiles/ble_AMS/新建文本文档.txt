@@ -1,0 +1,19 @@
+https://developer.apple.com/library/archive/documentation/CoreBluetooth/Reference/AppleMediaService_Reference/Specification/Specification.html
+
+使用步骤：
+1 AMS_client.c&h 文件路径：\components\ble\profiles\ble_AMS
+1 在入口函数void user_entry_after_ble_init(void) 内调用 AMS_gatt_add_client();
+
+2 case GAP_EVT_SLAVE_CONNECT: slave角色链接成功的事件回调内，调用
+gap_security_req(event->param.slave_connect.conidx); 进行加密请求。
+
+3 在case GAP_SEC_EVT_SLAVE_ENCRYPT: slave角色加密完成的事件回调内，调用如下代码，扫描AMS的服务。
+gatt_discovery_peer_svc(AMS_client_id,event->param.slave_connect.conidx,16,AMS_SVC_UUID);
+
+4 AMS_Client.c 内部接收消息的地方在这个函数
+void AMS_recv_entity_info(uint8_t conidx,uint8_t *p_data, uint16_t len)
+
+5 AMS_recv_data_src函数内，示例代码显示了订阅的ENTI_ID_TRACK 里的各属性的处理：作者、专辑名、歌曲名、总时长。其他消息类型，用户需要调用 函数 asm_subscribe_entity_update() 订阅对应的entity之后获取。
+注：信息在变化后推送，没变化的属性不会被推送。
+
+6 要控制歌曲播放，使用函数ams_crtl_cmd()进行。

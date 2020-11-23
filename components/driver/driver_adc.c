@@ -81,6 +81,7 @@ static struct adc_env_t adc_env;
 static uint8_t adc_ref_calib = false;
 static uint16_t adc_ref_internal = 1200;
 static uint16_t adc_ref_avdd = 2900;
+extern uint8_t adc_ref_internal_trim;
 
 /*********************************************************************
  * @fn      adc_set_sample_clock
@@ -400,6 +401,10 @@ void adc_init(struct adc_cfg_t *cfg)
                 adc_ref_avdd = ((2400*1024)/(data[1] / 32) + (800*1024)/(data[2] / 32)) / 2;
             }
         }
+        uint32_t tmp = adc_ref_internal * adc_ref_internal_trim;
+        adc_ref_internal = tmp / 80;
+        tmp = adc_ref_avdd * adc_ref_internal_trim;
+        adc_ref_avdd = tmp / 80;
     }
 
     memset((void *)&adc_env, 0, sizeof(adc_env));

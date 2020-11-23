@@ -14,6 +14,7 @@
 #include "driver_uart.h"
 #include "driver_pmu.h"
 #include "driver_flash.h"
+#include "driver_efuse.h"
 #include "flash_usage_config.h"
 
 #include "gap_api.h"
@@ -39,7 +40,7 @@ const struct jump_table_version_t _jump_table_version __attribute__((section("ju
 const struct jump_table_image_t _jump_table_image __attribute__((section("jump_table_1"))) =
 {
     .image_type = IMAGE_TYPE_APP,
-    .image_size = 0x19000,
+    .image_size = 0x20000,
 };
 
 /*********************************************************************
@@ -54,11 +55,24 @@ const struct jump_table_image_t _jump_table_image __attribute__((section("jump_t
  */
 void user_custom_parameters(void)
 {
-    memcpy(__jump_table.addr.addr,"\x0F\x09\x07\x09\x17\x20",MAC_ADDR_LEN);
-    __jump_table.system_clk = SYSTEM_SYS_CLK_12M;
+    struct chip_unique_id_t id_data;
+
+    efuse_get_chip_unique_id(&id_data);
+    __jump_table.addr.addr[0] = 0xBD;
+    __jump_table.addr.addr[1] = 0xAD;
+    __jump_table.addr.addr[2] = 0xD0;
+    __jump_table.addr.addr[3] = 0xF0;
+    __jump_table.addr.addr[4] = 0x17;
+    __jump_table.addr.addr[5] = 0xc0;
+    
+    id_data.unique_id[5] |= 0xc0; // random addr->static addr type:the top two bit must be 1.
+    memcpy(__jump_table.addr.addr,id_data.unique_id,6);
+    __jump_table.system_clk = SYSTEM_SYS_CLK_48M;
     __jump_table.local_drift = 600;
     __jump_table.sleep_algo_dur = 8;
-    jump_table_set_static_keys_store_offset(0x49000);
+    jump_table_set_static_keys_store_offset(JUMP_TABLE_STATIC_KEY_OFFSET);
+    
+    retry_handshake();
 }
 
 
@@ -227,7 +241,7 @@ __attribute__((section("ram_code"))) void pmu_gpio_isr_ram(void)
 void user_entry_after_ble_init(void)
 {
     co_printf("ota2\r\n");
-    gap_bond_manager_init(0x4A000,0x4B000,20,true);
+    gap_bond_manager_init(BLE_BONDING_INFO_SAVE_ADDR,BLE_REMOTE_SERVICE_SAVE_ADDR,20,true);
 
     //gap_set_dev_name("FR8010H_AT", strlen("FR8010H_AT"));
     gap_set_cb_func(proj_ble_gap_evt_func);
@@ -283,9 +297,9 @@ void user_entry_after_ble_init(void)
 
 //Add OTA, Device info, batt, hid profile
     ota_gatt_add_service();
-    dis_gatt_add_service();
-    batt_gatt_add_service();
-    hid_gatt_add_service();
+    //dis_gatt_add_service();
+    //batt_gatt_add_service();
+    //hid_gatt_add_service();
     co_printf("re_len:%d\r\n",system_regs->remap_length);
 }
 

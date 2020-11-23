@@ -26,6 +26,7 @@ void start_adv(void)
 
     gap_adv_param_t adv_param;
     adv_param.adv_mode = GAP_ADV_MODE_PER_ADV_DIRECT;   //DIRECT adv is only for advertising_data, periodic adv data is specified by local mac addr
+    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
@@ -96,6 +97,7 @@ void start_adv(void)
 
     gap_adv_param_t adv_param;
     adv_param.adv_mode = GAP_ADV_MODE_PER_ADV_UNDIRECT;   //DIRECT adv is only for advertising_data, periodic adv data is specified by local mac addr
+    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
@@ -162,6 +164,7 @@ void start_adv(void)
 
     gap_adv_param_t adv_param;
     adv_param.adv_mode = GAP_ADV_MODE_EXTEND_NON_CONN_SCAN;
+    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
@@ -215,6 +218,7 @@ void start_adv(void)
 
     gap_adv_param_t adv_param;
     adv_param.adv_mode = GAP_ADV_MODE_EXTEND_CONN_UNDIRECT;
+    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
@@ -262,6 +266,7 @@ void start_adv(void)
 
     gap_adv_param_t adv_param;
     adv_param.adv_mode = GAP_ADV_MODE_EXTEND_CONN_DIRECT;
+    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
@@ -314,6 +319,7 @@ void start_adv(void)
 
     gap_adv_param_t adv_param;
     adv_param.adv_mode = GAP_ADV_MODE_EXTEND_CONN_UNDIRECT;
+    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
@@ -371,6 +377,7 @@ void start_adv(void)
 
     gap_adv_param_t adv_param;
     adv_param.adv_mode = GAP_ADV_MODE_EXTEND_CONN_DIRECT;
+    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
@@ -420,6 +427,7 @@ void start_adv(void)
 
     gap_adv_param_t adv_param;
     adv_param.adv_mode = GAP_ADV_MODE_EXTEND_NON_CONN_SCAN;
+    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
@@ -473,6 +481,7 @@ void start_adv(void)
 
     gap_adv_param_t adv_param;
     adv_param.adv_mode = GAP_ADV_MODE_UNDIRECT;
+    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
@@ -539,6 +548,7 @@ void start_adv(void)
 
     gap_adv_param_t adv_param;
     adv_param.adv_mode = GAP_ADV_MODE_DIRECT;
+    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
@@ -574,6 +584,7 @@ void start_adv(void)
 
     gap_adv_param_t adv_param;
     adv_param.adv_mode = GAP_ADV_MODE_HDC_DIRECT;
+    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
@@ -638,6 +649,7 @@ void start_adv(void)
     /**********************/
 
     adv_param.adv_mode = GAP_ADV_MODE_UNDIRECT;
+    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
 
@@ -702,6 +714,7 @@ void start_adv(void)
 //adv1
     gap_adv_param_t adv_param;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
+    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_mode = GAP_ADV_MODE_UNDIRECT;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;

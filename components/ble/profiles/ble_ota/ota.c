@@ -124,11 +124,12 @@ __attribute__((section("ram_code"))) static void app_otas_save_data(uint32_t des
     */
 }
 
-void ota_clr_buffed_pkt(void)
+void ota_clr_buffed_pkt(uint8_t conidx)
 {
     //current_conidx = 200;
     if(first_pkt.buf != NULL)
     {
+        system_latency_enable(conidx);
         first_loop = true;
         os_free(first_pkt.buf);
         memset(&first_pkt,0x0,sizeof(first_pkt));
@@ -142,7 +143,7 @@ void ota_init(uint8_t conidx)
 }
 void ota_deinit(uint8_t conidx)
 {
-    ota_clr_buffed_pkt();
+    ota_clr_buffed_pkt(conidx);
 
     if(ota_recving_buffer != NULL) {
         os_free(ota_recving_buffer);
@@ -167,7 +168,8 @@ void app_otas_recv_data(uint8_t conidx,uint8_t *p_data,uint16_t len)
     if(first_loop)
     {
         first_loop = false;
-        gap_conn_param_update(conidx, 9, 9, 0, 500);
+        //gap_conn_param_update(conidx, 12, 12, 0, 500);
+        system_latency_disable(conidx);
         gatt_mtu_exchange_req(conidx);
 
         if(ota_recving_buffer == NULL) {
@@ -202,7 +204,7 @@ void app_otas_recv_data(uint8_t conidx,uint8_t *p_data,uint16_t len)
             break;
         case OTA_CMD_GET_STR_BASE:
             at_data_idx = 0;
-            ota_clr_buffed_pkt();
+            ota_clr_buffed_pkt(conidx);
             rsp_data_len += sizeof(struct storage_baseaddr);
             break;
         case OTA_CMD_READ_FW_VER:
@@ -416,7 +418,7 @@ void app_otas_recv_data(uint8_t conidx,uint8_t *p_data,uint16_t len)
                 app_otas_save_data(new_bin_base,first_pkt.buf,256);
             }
             uart_finish_transfers(UART1_BASE);
-            ota_clr_buffed_pkt();
+            ota_clr_buffed_pkt(conidx);
             //NVIC_SystemReset();
             platform_reset_patch(0);
             break;

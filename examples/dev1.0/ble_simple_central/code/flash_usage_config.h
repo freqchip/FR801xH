@@ -35,7 +35,7 @@
 /*
  * uncomment this MACRO if user need protect flash from unexpected erase or write operation
  */
-//#define FLASH_PROTECT
+#define FLASH_PROTECT
 
 #endif	// _FLASH_USAGE_CONFIG_H
 

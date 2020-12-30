@@ -149,7 +149,7 @@ void user_entry_before_ble_init(void)
 void user_entry_after_ble_init(void)
 {
     co_printf("BLE Central\r\n");
-		
+    system_sleep_disable();		//as master dont sleep
     // Application layer initialization, can included bond manager init, 
     // advertising parameters init, scanning parameter init, GATT service adding, etc.
     simple_central_init();

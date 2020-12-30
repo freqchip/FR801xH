@@ -229,7 +229,7 @@ typedef enum
 
 #define MAC_ADDR_LEN         6
 /// Maximal length of the Device Name value
-#define LOCAL_NAME_MAX_LEN      (18)
+#define LOCAL_NAME_MAX_LEN      (27)
 
 // BD ADDR
 typedef struct

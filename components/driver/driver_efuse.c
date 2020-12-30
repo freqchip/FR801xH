@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 
 #include "driver_efuse.h"
 #include "driver_plf.h"

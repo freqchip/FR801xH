@@ -592,7 +592,9 @@ void pmu_sub_init(void)
     ool_write(PMU_REG_DIAG_SEL, 0x42);
 #endif
 
+#ifndef CFG_FT_CODE
     pmu_bg_trim(data0);
+#endif
 }
 
 /*********************************************************************

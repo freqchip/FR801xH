@@ -1,0 +1,13 @@
+1 入口函数 void user_entry_after_ble_init(void)内部调用hid_client_create();创建hid client的profile
+
+2 在GAP_SEC_EVT_MASTER_ENCRYPT的主机加密完成的事件处理时，调用如下函数
+gatt_discovery_peer_svc(hid_client_id,event->param.master_encrypt_conidx,2,HID_SVC_UUID);
+扫描对端服务中的hid service服务。
+
+3 hid_client.h内部宏HID_CLT_NUM_REPORTS 表示最多支持几个report id。默认是6 ，可以修改
+
+4 uint16_t hid_client_msg_handler(gatt_msg_t *p_msg)函数内部。
+                    ////process the received data here.
+
+                    ////process the received data here.
+标识的地方是接收到的来自于report id的数据。

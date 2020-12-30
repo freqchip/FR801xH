@@ -34,6 +34,8 @@ void platform_reset_patch(uint32_t error);
 void con_max_lat_calc_patch(void);
 uint8_t lld_con_llcp_tx_patch(uint8_t, void *);
 uint8_t lld_con_data_tx_patch(uint8_t, void *);
+void vPortSuppressTicksAndSleep_patch( uint32_t xExpectedIdleTime );
+
 /*
  * keil debug breakpoint will take place FPB entry at the beginning of patch table with increasing
  * direction, so use patch entry point start at the end of patch table with decreasing direction.
@@ -58,7 +60,13 @@ struct patch_element_t patch_elements[] =
         .patch_pc = 0x00011f4c, // replace processing in if (sync) condition, take reference in svc_handler
     },
     [12] = {
-        .patch_pc = 0x0000849c, // check adv interval in set adv parameter cmd handler
+        //.patch_pc = 0x0000849c, // check adv interval in set adv parameter cmd handler
+#ifndef CFG_HCI_CODE
+        .patch_pc = 0x0001ca6a,
+        .replace_function = vPortSuppressTicksAndSleep_patch,
+#else
+        .patch_pc = 0x00000001,
+#endif
     },
 #ifdef USER_MEM_API_ENABLE
     [11] = {
@@ -142,7 +150,7 @@ __attribute__((aligned(64))) uint32_t patch_map[16] =
     0xBF00BF00,
     0xBF00DF0a, //10
     0xBF00DF0b,
-    0xe002d87f, // 12
+    0xBF00DF0c, // 0xe002d87f, // 12
     0xDF0CBF00,
     0x22087933,
     0x4B2A0051,

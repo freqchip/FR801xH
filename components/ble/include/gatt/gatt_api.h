@@ -31,15 +31,18 @@
 /** @defgroup GATT_PROP_BITMAPS_DEFINES GATT Attribute Access Permissions Bit Fields
  * @{
  */
-#define GATT_PROP_READ                  0x0001  //!< Attribute is Readable
-#define GATT_PROP_WRITE                 0x0002  //!< Attribute is Writable
-#define GATT_PROP_AUTHEN_READ           0x0004  //!< Read requires Authentication
-#define GATT_PROP_AUTHEN_WRITE          0x0008  //!< Write requires Authentication
-#define GATT_PROP_NOTI                  0x0100  //!< Attribute is able to send notification
-#define GATT_PROP_INDI                  0x0200  //!< Attribute is able to send indication
-#define GATT_PROP_WRITE_REQ             0x0400  //!< Attribute supports write request
-#define GATT_PROP_WRITE_CMD             0x0800  //!< Attribute supports write with no response
+#define GATT_PROP_BROADCAST             (1<<0)  //!< Attribute is able to broadcast
+#define GATT_PROP_READ                  (1<<1)  //!< Attribute is Readable
+#define GATT_PROP_WRITE_CMD             (1<<2)  //!< Attribute supports write with no response
+#define GATT_PROP_WRITE_REQ             (1<<3)  //!< Attribute supports write request
+#define GATT_PROP_NOTI                  (1<<4)  //!< Attribute is able to send notification
+#define GATT_PROP_INDI                  (1<<5)  //!< Attribute is able to send indication
+#define GATT_PROP_AUTH_SIG_WRTIE        (1<<6)  //!< Attribute supports authenticated signed write
+#define GATT_PROP_EXTEND_PROP           (1<<7)  //!< Attribute supports extended properities
 
+#define GATT_PROP_WRITE                 (1<<8)  //!< Attribute is Writable (support both write_req and write_cmd)
+#define GATT_PROP_AUTHEN_READ           (1<<9)  //!< Read requires Authentication
+#define GATT_PROP_AUTHEN_WRITE          (1<<10)  //!< Write requires Authentication
 /** @} End GATT_PERMIT_BITMAPS_DEFINES */
 
 /** @defgroup GATT_OPERATION_NAME GATT operation name define, used with GATTS/C_MSG_CMP_EVT
@@ -51,13 +54,74 @@
 #define GATT_OP_WRITE_REQ               0x05    //!< GATT wirte request operation
 #define GATT_OP_WRITE_CMD               0x06    //!< GATT wirte command operation, write without response
 #define GATT_OP_READ                    0x07    //!< GATT read operation
+#define GATT_OP_PEER_SVC_DISC_END       0x08    //!< Used with GATTC_CMP_EVT, GATT peer device service discovery is ended  
+
 /** @} End GATT_OPERATION_NAME */
 
 
 #define GATT_SVC_ID_FAIL                0xff
+
+
+
 /*
  * TYPEDEFS 
  */
+/// Service Discovery Attribute type
+enum svc_att_type
+{
+    ATT_TYPE_NONE,         /// No Attribute Information
+    ATT_TYPE_INC_SVC,      /// Included Service
+    ATT_TYPE_CHAR_DECL,     /// Characteristic Declaration
+    ATT_TYPE_VAL,      /// Characteristic Attribute Value
+    ATT_TYPE_DESC,     /// Characteristic Attribute Descriptor
+};
+
+typedef struct
+{
+    uint8_t att_type;           /// should be ATT_TYPE_INC_SVC ,Included Service Information
+    uint8_t uuid_len;           /// Included Service UUID
+    uint8_t  uuid[UUID_SIZE_16];    /// Included Service UUID
+    uint16_t start_hdl;         /// Included service Start Handle
+    uint16_t end_hdl;           /// Included service End Handle
+} inc_svc_t;
+
+/// Information about attribute characteristic
+typedef struct
+{
+    uint8_t att_type;       /// should be ATT_TYPE_CHAR_DECL: Characteristic Declaration
+    uint8_t prop;           /// Value property, see @defgroup GATT_PROP_BITMAPS_DEFINES
+    uint16_t handle;        /// Value Handle
+} char_decl_t;
+
+/// Information about attribute
+typedef struct
+{
+    uint8_t  att_type;      /// should be ATT_TYPE_VAL: Attribute Value OR  ATT_TYPE_DESC: Attribute Descriptor
+    uint8_t  uuid_len;      /// Attribute UUID Length
+    uint8_t  uuid[UUID_SIZE_16];    /// Attribute UUID
+} att_value_t;
+
+/// Attribute information
+union attr_info
+{
+    uint8_t att_type;       /// Attribute Type
+    char_decl_t char_decl;    /// Information about attribute characteristic,valid when att_type == ATT_TYPE_CHAR_DECL
+    inc_svc_t inc_svc;  /// Information about included service, valid when att_type == ATT_TYPE_INC_SVC
+    att_value_t att_value;              /// Information about attribute, valid when att_type == ATT_TYPE_VAL or att_type == ATT_TYPE_DESC
+};
+
+/**
+* Service Discovery indicate that a service has been found.
+*/
+typedef struct
+{
+    uint8_t  uuid_len;      /// Service UUID Length
+    uint8_t  uuid[UUID_SIZE_16];    /// Service UUID
+    uint16_t start_hdl;     /// Service start handle
+    uint16_t end_hdl;       /// Service end handle
+    union attr_info info[];  /// attribute information present in the service. (Nnumber of info = end_hdl - start_hdl)
+} gatt_svc_report_t;
+
 
 /**
 * GATT message events type define 
@@ -73,6 +137,7 @@ typedef enum
     GATTC_MSG_CMP_EVT,          //!< GATT client message complete event
     GATTC_MSG_LINK_CREATE,
     GATTC_MSG_LINK_LOST,
+    GATTC_MSG_SVC_REPORT,       //!< GATT client received peer service report
 } gatt_msg_evt_t;
 
 /**
@@ -266,8 +331,47 @@ uint8_t gatt_add_service(gatt_service_t *p_service);
  * @param   p_client - client information.
  *
  * @return  Assigned client_id.
+ *
+ example1 :
+    const gatt_uuid_t client_att_tb[] =
+    {
+        [0]  =
+        { UUID_SIZE_16, SPSC_UUID128_ARR_TX},
+        [1]  =
+        { UUID_SIZE_16, SPSC_UUID128_ARR_RX},
+    };
+    func()
+    {
+        gatt_client_t client;
+        client.p_att_tb = client_att_tb;
+        client.att_nb = 2;
+        client.gatt_msg_handler = client_msg_handler;
+    }
+  example2 :   //in this case, there will no be uuids being registed.
+    func()
+    {
+        gatt_client_t client;
+        client.p_att_tb = NULL;
+        client.att_nb = 0;
+        client.gatt_msg_handler = client_msg_handler;
+    }
  */
 uint8_t gatt_add_client(gatt_client_t *p_client);
+
+/*********************************************************************
+ * @fn      gatt_add_client_uuid
+ *
+ * @brief   Addding a GATT client uuid in the system if no uuid array is given when gatt_add_client() is called 
+            Normally this function is called after gatt event: GATTC_MSG_CMP_EVT and op: GATT_OP_PEER_SVC_DISC_END
+ *
+ * @param   att_tb - uuid array which will be added into client profile
+ *          att_nb - size of uuid array.
+ *          conn_idx - current link conidx.
+ *          handles - handle array corresponding to att_tb[] array .
+            
+ * @return  None.
+ */
+void gatt_add_client_uuid(gatt_uuid_t att_tb[], uint8_t att_nb, uint8_t conn_idx, uint16_t handles[]);
 
 /*********************************************************************
  * @fn      gatt_change_svc_uuid

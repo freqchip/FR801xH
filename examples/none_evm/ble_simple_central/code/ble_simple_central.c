@@ -30,24 +30,30 @@
  * CONSTANTS (常量定义)
  */
 
-#define SP_CHAR1_UUID            0xFFF1
-#define SP_CHAR2_UUID            0xFFF2
+#define SPSC_UUID128_ARR_TX   {0xb8, 0x5c, 0x49, 0xd2, 0x04, 0xa3, 0x40, 0x71, 0xa0, 0xb5, 0x35, 0x85, 0x3e, 0xb0, 0x83, 0x07}
+#define SPSC_UUID128_ARR_RX   {0xba, 0x5c, 0x49, 0xd2, 0x04, 0xa3, 0x40, 0x71, 0xa0, 0xb5, 0x35, 0x85, 0x3e, 0xb0, 0x83, 0x07}
 
+/*
+ * TYPEDEFS (???????)
+ */
+
+/*
+ * GLOBAL VARIABLES (??????)
+ */
+#if 1
 const gatt_uuid_t client_att_tb[] =
 {
     [0]  =
-    { UUID_SIZE_2, UUID16_ARR(SP_CHAR1_UUID)},
+    { UUID_SIZE_16, SPSC_UUID128_ARR_TX},
     [1]  =
-    { UUID_SIZE_2, UUID16_ARR(SP_CHAR2_UUID)},
+    { UUID_SIZE_16, SPSC_UUID128_ARR_RX},
 };
+#else
+const uint8_t spss_svc_uuid[16] = {0xb7, 0x5c, 0x49, 0xd2, 0x04, 0xa3, 0x40, 0x71, 0xa0, 0xb5, 0x35, 0x85, 0x3e, 0xb0, 0x83, 0x07};
+gatt_uuid_t client_att_tb[2] = {0};
+uint16_t handles[2] = {0,0};
+#endif
 
-/*
- * TYPEDEFS (类型定义)
- */
-
-/*
- * GLOBAL VARIABLES (全局变量)
- */
 uint8_t client_id;
 /*
  * LOCAL VARIABLES (本地变量)
@@ -256,10 +262,57 @@ static uint16_t simple_central_msg_handler(gatt_msg_t *p_msg)		//GATT event call
             }
         }
         break;
-        
+        case GATTC_MSG_SVC_REPORT:
+            gatt_svc_report_t *svc_rpt = (gatt_svc_report_t *)(p_msg->param.msg.p_msg_data);
+            co_printf("svc:%d,start_hdl:%d,end_hdl:%d\r\n",svc_rpt->uuid_len,svc_rpt->start_hdl,svc_rpt->end_hdl);
+#if 0
+            if(memcmp(svc_rpt->uuid,spss_svc_uuid,16) == 0)
+            {
+                for(uint16_t i = 0; i<(svc_rpt->end_hdl - svc_rpt->start_hdl); i++)
+                {
+                    //co_printf("info[%d].att_type:%d\r\n",i,svc_rpt->info[i].att_type);
+                    if(svc_rpt->info[i].att_type == ATT_TYPE_CHAR_DECL)
+                    {
+                        //co_printf("decl, prop:%x,handle:%d\r\n",svc_rpt->info[i].char_decl.prop,svc_rpt->info[i].char_decl.handle);
+                        if((svc_rpt->info[i].char_decl.prop & GATT_PROP_NOTI) && handles[0] == 0)
+                            handles[0] = svc_rpt->info[i].char_decl.handle;
+                        if((svc_rpt->info[i].char_decl.prop & GATT_PROP_WRITE_CMD) && handles[1] == 0)
+                            handles[1] = svc_rpt->info[i].char_decl.handle;
+                    }
+                    if(svc_rpt->info[i].att_type == ATT_TYPE_VAL)
+                    {
+                        //co_printf("att_val, uuid_len:%d,uuid:",svc_rpt->info[i].att_value.uuid_len);
+                        //show_reg(svc_rpt->info[i].att_value.uuid,svc_rpt->info[i].att_value.uuid_len,1);
+                        if( i == (handles[0] - svc_rpt->start_hdl - 1))
+                        {
+                            client_att_tb[0].size = svc_rpt->info[i].att_value.uuid_len;
+                            memcpy(client_att_tb[0].p_uuid,svc_rpt->info[i].att_value.uuid,client_att_tb[0].size);
+                        }
+                        else if( i == (handles[1] - svc_rpt->start_hdl - 1))
+                        {
+                            client_att_tb[1].size = svc_rpt->info[i].att_value.uuid_len;
+                            memcpy(client_att_tb[1].p_uuid,svc_rpt->info[i].att_value.uuid,client_att_tb[1].size);
+                        }
+                    }
+                    if(svc_rpt->info[i].att_type == ATT_TYPE_DESC)
+                    {
+                        //co_printf("desc, uuid_len:%d,uuid:",svc_rpt->info[i].att_value.uuid_len);
+                        //show_reg(svc_rpt->info[i].att_value.uuid,svc_rpt->info[i].att_value.uuid_len,1);
+                    }
+                }
+            }
+#endif
+            break;        
         case GATTC_MSG_CMP_EVT:	//A GATTC operation is over
         {
-            if(p_msg->param.op.operation == GATT_OP_PEER_SVC_REGISTERED)	//if operation is discovery serivce group on peer device
+		    if(p_msg->param.op.operation == GATT_OP_PEER_SVC_DISC_END)
+            {
+                co_printf("peer svc discovery done\r\n");
+#if 0
+                gatt_add_client_uuid(client_att_tb,2,p_msg->conn_idx,handles);
+#endif
+            }
+            else if(p_msg->param.op.operation == GATT_OP_PEER_SVC_REGISTERED)	//if operation is discovery serivce group on peer device
             {
                 uint16_t att_handles[2];
                 memcpy(att_handles,p_msg->param.op.arg,4);	//copy discoveried handles on peer device
@@ -347,8 +400,14 @@ void simple_central_init(void)
     // Initialize GATT 
     gatt_client_t client;
     
+#if 1
     client.p_att_tb = client_att_tb;
     client.att_nb = 2;
+#else
+    client.p_att_tb = NULL;
+    client.att_nb = 0;
+#endif
+
     client.gatt_msg_handler = simple_central_msg_handler;
     client_id = gatt_add_client(&client);
     

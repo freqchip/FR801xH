@@ -7,7 +7,10 @@
 #define OTA_HDR_RESULT_LEN          1
 #define OTA_HDR_OPCODE_LEN          1
 #define OTA_HDR_LENGTH_LEN          2
-
+//#define OTA_CRC_CHECK
+#ifdef OTA_CRC_CHECK
+#define OTA_TIMEOUT  5000
+#endif
 typedef enum 
 {
     OTA_CMD_NVDS_TYPE,
@@ -36,6 +39,15 @@ typedef enum
     OTA_NVDS_FLASH,
     OTA_NVDS_EEPROM,
 }ota_nvds_type;
+
+#ifdef OTA_CRC_CHECK
+typedef enum 
+{
+    OTA_TIMOUT,
+    OTA_ADDR_ERROR,
+    OTA_CHECK_FAIL,
+}ota_warning_type;
+#endif
 
 __PACKED struct firmware_version
 {
@@ -123,6 +135,14 @@ __PACKED struct read_data_cmd
     uint16_t length;
 }GCC_PACKED;
 
+#ifdef OTA_CRC_CHECK
+__PACKED struct firmware_check
+{
+    uint32_t firmware_length;
+    uint32_t CRC32_data;
+}GCC_PACKED;
+#endif
+
 __PACKED struct app_ota_cmd_hdr_t
 {
     uint8_t opcode;
@@ -134,6 +154,9 @@ __PACKED struct app_ota_cmd_hdr_t
         struct read_mem_cmd read_mem;
         struct write_data_cmd write_data;
         struct read_data_cmd read_data;
+#ifdef OTA_CRC_CHECK		
+        struct firmware_check fir_crc_data;
+#endif		
     }GCC_PACKED cmd;
 }GCC_PACKED;
 

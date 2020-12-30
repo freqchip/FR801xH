@@ -1,0 +1,16 @@
+官网网址：https://developer.apple.com/library/archive/documentation/CoreBluetooth/Reference/AppleNotificationCenterServiceSpecification/Specification/Specification.html#//apple_ref/doc/uid/TP40013460-CH1-SW14
+
+使用步骤：
+1 ANCS_client.c&h 文件路肩：\components\ble\profiles\ble_ANCS
+1 在入口函数void user_entry_after_ble_init(void) 内调用 ANCS_gatt_add_client();
+
+2 case GAP_EVT_SLAVE_CONNECT: slave角色链接成功的事件回调内，调用
+gap_security_req(event->param.slave_connect.conidx); 进行加密请求。
+
+3 在case GAP_SEC_EVT_SLAVE_ENCRYPT: slave角色加密完成的事件回调内，调用如下代码，扫描ANCS的服务。
+gatt_discovery_peer_svc(ANCS_client_id,event->param.slave_connect.conidx,16,ANCS_SVC_UUID);
+
+4 ANCS_Client.c 内部接收消息的地方在这个函数
+void ANCS_recv_data_src(uint8_t conidx,uint8_t *p_data, uint16_t len)
+
+5 ANCS_recv_data_src函数内，示例代码显示了微信，电话号码，和移动qq的消息类型。其他消息内型，用户可以打印所有消息字符后，判断消息内容。

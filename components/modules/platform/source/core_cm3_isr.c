@@ -7,7 +7,7 @@
 //#include "apb2spi.h"
 //#include "uart.h"
 
-
+extern void platform_reset_patch(uint32_t error);
 void HardFault_Handler_C(unsigned int* hardfault_args)
 {
     co_printf("Crash, dump regs:\r\n");

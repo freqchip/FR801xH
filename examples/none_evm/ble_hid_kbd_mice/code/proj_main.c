@@ -197,6 +197,7 @@ void proj_ble_gap_evt_func(gap_event_t *event)
         case GAP_EVT_ALL_SVC_ADDED:
         {
             co_printf("all svc added\r\n");
+			hid_start_adv();
 #ifdef USER_MEM_API_ENABLE
             //    show_mem_list();
             //      show_msg_list();
@@ -317,7 +318,7 @@ void user_entry_after_ble_init(void)
     }
 #endif
 
-    hid_start_adv();
+
     dis_gatt_add_service();
     batt_gatt_add_service();
     hid_gatt_add_service();

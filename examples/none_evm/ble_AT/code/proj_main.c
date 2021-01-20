@@ -55,21 +55,11 @@ const struct jump_table_image_t _jump_table_image __attribute__((section("jump_t
  */
 void user_custom_parameters(void)
 {
-    struct chip_unique_id_t id_data;
+    memcpy(__jump_table.addr.addr,"\x0F\x09\x07\x09\x17\x20",MAC_ADDR_LEN);
 
-    efuse_get_chip_unique_id(&id_data);
-    __jump_table.addr.addr[0] = 0xBD;
-    __jump_table.addr.addr[1] = 0xAD;
-    __jump_table.addr.addr[2] = 0xD0;
-    __jump_table.addr.addr[3] = 0xF0;
-    __jump_table.addr.addr[4] = 0x17;
-    __jump_table.addr.addr[5] = 0xc0;
-    
-    id_data.unique_id[5] |= 0xc0; // random addr->static addr type:the top two bit must be 1.
-    memcpy(__jump_table.addr.addr,id_data.unique_id,6);
-    __jump_table.system_clk = SYSTEM_SYS_CLK_48M;
-    __jump_table.local_drift = 600;
-    __jump_table.sleep_algo_dur = 8;
+    __jump_table.system_clk = SYSTEM_SYS_CLK_12M;
+    //__jump_table.local_drift = 600;
+    //__jump_table.sleep_algo_dur = 8;
     jump_table_set_static_keys_store_offset(JUMP_TABLE_STATIC_KEY_OFFSET);
     
     retry_handshake();

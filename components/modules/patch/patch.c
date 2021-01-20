@@ -61,11 +61,11 @@ struct patch_element_t patch_elements[] =
     },
     [12] = {
         //.patch_pc = 0x0000849c, // check adv interval in set adv parameter cmd handler
-#ifndef CFG_HCI_CODE
+#if defined(CFG_HCI_CODE) || defined(CFG_FT_CODE)
+        .patch_pc = 0x00000001,
+#else
         .patch_pc = 0x0001ca6a,
         .replace_function = vPortSuppressTicksAndSleep_patch,
-#else
-        .patch_pc = 0x00000001,
 #endif
     },
 #ifdef USER_MEM_API_ENABLE
@@ -282,7 +282,7 @@ __attribute__((section("ram_code"))) void low_power_restore_entry_imp(uint8_t ty
             pmu_calibration_start(PMU_CALI_SRC_LP_RC, __jump_table.lp_clk_calib_cnt);
         }
 #endif        
-        
+
         if((ool_read(PMU_REG_KEYSCAN_CTRL) & PMU_KEYSCAN_EN)
            && ((pmu_get_isr_state() & PMU_ISR_KEYSCAN_STATE) == 0))
         {

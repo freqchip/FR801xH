@@ -6,6 +6,7 @@
 #include "os_msg_q.h"
 #include "os_timer.h"
 #include "os_mem.h"
+#include "flash_usage_config.h"
 
 #include "at_recv_cmd.h"
 #include "at_cmd_task.h"
@@ -425,7 +426,7 @@ void at_init(void)
 /********Below is flash storage/restore**************/
 #define USER_FLASH_BASE_ADDR 0x4C000    //208K
 #define FLASH_PAGE_SIZE 0x1000
-#define USER_FLASH_MAX_PAGE_ADDR (0x7E000 - 0x1000) //512K -4K
+#define USER_FLASH_MAX_PAGE_ADDR (BLE_BONDING_INFO_SAVE_ADDR - 0x1000) //512K -4K
 
 #define AT_INFO_FLASH_BASE_ADDR     (USER_FLASH_BASE_ADDR)
 
@@ -569,8 +570,8 @@ void at_load_info_from_flash(void)
 
         gap_set_dev_name("FR8010H_AT",sizeof("FR8010H_AT"));
         //rf_set_tx_power(rf_power_arr[gAT_buff_env.default_info.rf_power]);
-        //mac_addr_t addr = {0x1f,0x09,0x07,0x09,0x17,0x20};
-        //gap_address_set(&addr);
+        mac_addr_t addr = {0x1f,0x09,0x07,0x09,0x17,0x20};
+        gap_address_set(&addr);
 
         memset( (uint8_t *)&gAT_buff_env.master_peer_param, 0x0, sizeof(gAT_buff_env.master_peer_param) );
         //gAT_buff_env.master_peer_param.conn_param.bond = APP_SEC_NO_BOND;

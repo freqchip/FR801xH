@@ -10,6 +10,7 @@
  * INCLUDES (包含头文件)
  */
 #include <stdbool.h>
+#include "os_timer.h"
 #include "gap_api.h"
 #include "gatt_api.h"
 #include "driver_gpio.h"
@@ -66,6 +67,7 @@ static uint8_t scan_rsp_data[] =
 /*
  * LOCAL VARIABLES (本地变量)
  */
+os_timer_t update_param_timer;
 
 
  
@@ -85,6 +87,11 @@ static void sp_start_adv(void);
  * @{
  */
 
+void param_timer_func(void *arg)
+{
+    co_printf("param_timer_func\r\n");
+    gap_conn_param_update(0, 12, 12, 55, 600);
+}
 /*********************************************************************
  * @fn      app_gap_evt_cb
  *
@@ -102,7 +109,7 @@ void app_gap_evt_cb(gap_event_t *p_event)
         case GAP_EVT_ADV_END:
         {
             co_printf("adv_end,status:0x%02x\r\n",p_event->param.adv_end.status);
-            //gap_start_advertising(0);
+            gap_start_advertising(0);
         }
         break;
         
@@ -128,12 +135,8 @@ void app_gap_evt_cb(gap_event_t *p_event)
         {
             co_printf("Link[%d] disconnect,reason:0x%02X\r\n",p_event->param.disconnect.conidx
                       ,p_event->param.disconnect.reason);
+					  os_timer_stop(&update_param_timer);
             sp_start_adv();
-#ifdef USER_MEM_API_ENABLE
-            show_mem_list();
-            //show_msg_list();
-            show_ke_malloc();
-#endif
         }
         break;
 
@@ -149,7 +152,7 @@ void app_gap_evt_cb(gap_event_t *p_event)
 
         case GAP_EVT_PEER_FEATURE:
             co_printf("peer[%d] feats ind\r\n",p_event->param.peer_feature.conidx);
-            show_reg((uint8_t *)&(p_event->param.peer_feature.features),8,1);
+            //show_reg((uint8_t *)&(p_event->param.peer_feature.features),8,1);
             break;
 
         case GAP_EVT_MTU:
@@ -163,6 +166,8 @@ void app_gap_evt_cb(gap_event_t *p_event)
                 
         case GAP_SEC_EVT_SLAVE_ENCRYPT:
             co_printf("slave[%d]_encrypted\r\n",p_event->param.slave_encrypt_conidx);
+						os_timer_start(&update_param_timer,4000,0);
+				
             break;
 
         default:
@@ -188,8 +193,8 @@ static void sp_start_adv(void)
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
-    adv_param.adv_intv_min = 300;
-    adv_param.adv_intv_max = 300;
+    adv_param.adv_intv_min = 600;
+    adv_param.adv_intv_max = 600;
         
     gap_set_advertising_param(&adv_param);
     
@@ -217,7 +222,8 @@ void simple_peripheral_init(void)
     // set local device name
     uint8_t local_name[] = "Simple Peripheral";
     gap_set_dev_name(local_name, sizeof(local_name));
-    
+    os_timer_init( &update_param_timer,param_timer_func,NULL);
+
     // Initialize security related settings.
     gap_security_param_t param =
     {
@@ -234,7 +240,7 @@ void simple_peripheral_init(void)
     gap_set_cb_func(app_gap_evt_cb);
 
     gap_bond_manager_init(BLE_BONDING_INFO_SAVE_ADDR, BLE_REMOTE_SERVICE_SAVE_ADDR, 8, true);
-    gap_bond_manager_delete_all();
+    //gap_bond_manager_delete_all();
     
     mac_addr_t addr;
     gap_address_get(&addr);

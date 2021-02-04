@@ -207,6 +207,7 @@ typedef enum
     GAP_EVT_SLAVE_CONNECT,          //!< Connected as slave role
     GAP_EVT_MASTER_CONNECT,         //!< Connected as master role
     GAP_EVT_DISCONNECT,             //!< Disconnected
+    GAP_EVT_LINK_PARAM_REQ,         //!< Parameter update request
     GAP_EVT_LINK_PARAM_REJECT,      //!< Parameter update rejected
     GAP_EVT_LINK_PARAM_UPDATE,      //!< Parameter update successful
     GAP_EVT_PHY_REJECT,             //!< Parameter update rejected
@@ -220,11 +221,16 @@ typedef enum
     GAP_EVT_PEER_FEATURE,           //!< Got peer device supported features
     GAP_EVT_MTU,                    //!< MTU exchange event
     GAP_EVT_LINK_RSSI,              //!< Got RSSI value of link peer device
+    GAP_EVT_LINK_VER,              //!< Got version value of link peer device
 
     GAP_SEC_EVT_MASTER_AUTH_REQ,    //!< As master role, got authentication request from slave
     GAP_SEC_EVT_MASTER_ENCRYPT,     //!< Link is encryted as master role
     GAP_SEC_EVT_MASTER_ENCRYPT_FAIL, //!< Link has encrytion fail as master role
     GAP_SEC_EVT_SLAVE_ENCRYPT,      //!< Link is enrypted as slave role
+
+    GAP_SEC_EVT_BOND_START,         //!< Link bond starts
+    GAP_SEC_EVT_BOND_FAIL,          //!< Link bond is failed
+    GAP_SEC_EVT_BOND_SUCCESS,       //!< Link bond is successful
 } gap_event_type_t;
 
 #define MAC_ADDR_LEN         6
@@ -280,6 +286,38 @@ typedef struct
     uint16_t    sup_to;         //!< Supervision timeout
 } gap_evt_link_param_update_t;
 
+// Link parameter update request event
+typedef struct
+{
+    uint16_t src_id;
+    uint16_t dst_id;
+    /// Connection index
+    uint8_t conidx;
+    /// Connection interval minimum
+    uint16_t intv_min;
+    /// Connection interval maximum
+    uint16_t intv_max;
+    /// Latency
+    uint16_t latency;
+    /// Supervision timeout
+    uint16_t time_out;
+} gap_evt_link_param_update_req_t;
+
+// Link parameter update rsponse event
+typedef struct
+{
+    bool accept;
+    uint16_t src_id;
+    uint16_t dst_id;
+    /// Connection index
+    uint8_t conidx;
+    
+    /// Mimimum Connection Event Duration
+    uint16_t ce_len_min;
+    /// Maximum Connection Event Duration
+    uint16_t ce_len_max;
+} gap_evt_link_param_update_rsp_t;
+
 // PHY update update success event
 typedef struct
 {
@@ -310,6 +348,18 @@ typedef struct
     uint16_t        length;         //!< Report length
     uint8_t         *data;          //!< Report data
 } gap_evt_adv_report_t;
+
+// link peer device version
+typedef struct
+{
+    uint8_t conidx;                 //!< Connection index
+    /// Manufacturer name
+    uint16_t compid;
+    /// LMP subversion
+    uint16_t lmp_subvers;
+    /// LMP version
+    uint8_t  lmp_vers;
+} gap_link_ver_t;
 
 // Periodic sync is established event
 typedef struct
@@ -348,6 +398,13 @@ typedef struct
     uint8_t reason;             //!< Reason of enc fail
 } gap_evt_master_enc_fail_t;
 
+// Link has bond failure 
+typedef struct
+{
+    uint8_t conidx;             //!< Connection index
+    uint8_t reason;             //!< Reason of enc fail
+} gap_evt_bond_fail_t;
+
 // GAT event structure
 typedef struct
 {
@@ -359,6 +416,7 @@ typedef struct
         gap_evt_disconnect_t            disconnect;             //!< Disconnect event
         gap_evt_link_param_reject_t     link_reject;            //!< Parameter reject event
         gap_evt_link_param_update_t     link_update;            //!< Parameter update success event
+        gap_evt_link_param_update_req_t link_update_req;      	//!< Parameter update request event
         gap_evt_phy_update_t            phy_update;             //!< PHY update success event
         gap_evt_phy_reject_t            phy_reject;             //!< PHY update reject event
         adv_end_t                       adv_end;                //!< Advertising end status
@@ -370,11 +428,15 @@ typedef struct
         gap_evt_peer_feature_t          peer_feature;           //!< Peer device supported features
         gattc_mtu_t                     mtu;                    //!< MTU size
         int8_t                          link_rssi;              //!< Peer device RSSI value
+        gap_link_ver_t                  link_ver;               //!< Peer device version value
 
         gap_sec_evt_master_auth_req_t   auth_req;               //!< Master authentication request
         uint8_t                         master_encrypt_conidx;  //!< Connection index of encrypted link, role as master
         gap_evt_master_enc_fail_t       master_encrypt_fail;    //!< encrption fail reason & conidx, role as master
         uint8_t                         slave_encrypt_conidx;   //!< Connection index of encrypted link, role as slave
+        uint8_t                         bond_start_conidx;   //!< Connection index of encrypted link, role as slave
+        uint8_t                         bond_success_conidx;   //!< Connection index of encrypted link, role as slave
+        gap_evt_bond_fail_t             bond_fail;   //!< Connection index of encrypted link, role as slave
     } param;
 } gap_event_t;
 
@@ -834,6 +896,8 @@ void gap_set_link_rssi_report(bool enable);
  * @return  None.
  */
 void gap_get_link_rssi(uint8_t conidx);
+void gap_get_link_features(uint8_t conidx);
+void gap_get_link_version(uint8_t conidx);
 
 /**********************************************************************
  * @fn      gap_conn_param_update
@@ -1032,6 +1096,16 @@ conn_peer_param_t *gap_get_latest_conn_parameter(void);
  */
 uint8_t gap_get_latest_bond_idx(void);
 
+/**********************************************************************
+ * @fn      gap_param_update_rsp
+ *
+ * @brief   rsp     - link param update response parameters, @ref gap_evt_link_param_update_rsp_t.
+ *
+ * @param   None
+ *
+ * @return  None
+ */
+void gap_param_update_rsp(gap_evt_link_param_update_rsp_t *rsp);
 #endif // end of #ifndef GAP_API_H
 
 

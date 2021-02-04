@@ -99,6 +99,7 @@ void user_custom_parameters(void)
  */
 __attribute__((section("ram_code"))) void user_entry_before_sleep_imp(void)
 {
+	uart_putc_noint_no_wait(UART1, 's');
 }
 
 /*********************************************************************
@@ -117,26 +118,13 @@ __attribute__((section("ram_code"))) void user_entry_before_sleep_imp(void)
 __attribute__((section("ram_code"))) void user_entry_after_sleep_imp(void)
 {
     /* set PA2 and PA3 for AT command interface */
-    system_set_port_pull(GPIO_PA2, true);
-    system_set_port_mux(GPIO_PORT_A, GPIO_BIT_2, PORTA2_FUNC_UART1_RXD);
+    //system_set_port_pull(GPIO_PA2, true);
+    //system_set_port_mux(GPIO_PORT_A, GPIO_BIT_2, PORTA2_FUNC_UART1_RXD);
     system_set_port_mux(GPIO_PORT_A, GPIO_BIT_3, PORTA3_FUNC_UART1_TXD);
     
-    system_sleep_disable();
-
-    if(__jump_table.system_option & SYSTEM_OPTION_ENABLE_HCI_MODE)
-    {
-        system_set_port_pull(GPIO_PA4, true);
-        system_set_port_mux(GPIO_PORT_A, GPIO_BIT_4, PORTA4_FUNC_UART0_RXD);
-        system_set_port_mux(GPIO_PORT_A, GPIO_BIT_5, PORTA5_FUNC_UART0_TXD);
-        uart_init(UART0, BAUD_RATE_115200);
-        NVIC_EnableIRQ(UART0_IRQn);
-
-        system_sleep_disable();
-    }
-
     uart_init(UART1, BAUD_RATE_115200);
-    NVIC_EnableIRQ(UART1_IRQn);
-
+    //NVIC_EnableIRQ(UART1_IRQn);
+		uart_putc_noint_no_wait(UART1, 'w');
     // Do some things here, can be uart print
 
     NVIC_EnableIRQ(PMU_IRQn);
@@ -171,8 +159,8 @@ void user_entry_before_ble_init(void)
     NVIC_EnableIRQ(PMU_IRQn);
     
     // Enable UART print.
-    system_set_port_pull(GPIO_PA2, true);
-    system_set_port_mux(GPIO_PORT_A, GPIO_BIT_2, PORTA2_FUNC_UART1_RXD);
+    //system_set_port_pull(GPIO_PA2, true);
+    //system_set_port_mux(GPIO_PORT_A, GPIO_BIT_2, PORTA2_FUNC_UART1_RXD);
     system_set_port_mux(GPIO_PORT_A, GPIO_BIT_3, PORTA3_FUNC_UART1_TXD);
     uart_init(UART1, BAUD_RATE_115200);    
 }
@@ -192,7 +180,7 @@ void user_entry_before_ble_init(void)
 void user_entry_after_ble_init(void)
 {
     co_printf("BLE Peripheral\r\n");
-
+	
 #if 1
     system_sleep_disable();		//disable sleep 
 #else

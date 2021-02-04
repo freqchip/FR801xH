@@ -52,6 +52,7 @@
 #define SYSTEM_OPTION_RTOS_HEAP_SEL         CO_BIT(13)  // 1: KE_MEM_NON_RETENTION, 0: KE_MEM_ENV
 #define SYSTEM_OPTION_BOOT_UART_PC_EN       CO_BIT(14)  // 1: use PC6/PC7 for boot up uart, 0: use PA2/PA3
 #define SYSTEM_OPTION_ENABLE_HCI_MODE       CO_BIT(15)  // enable uart read start for HCI
+#define SYSTEM_OPTION_UP_PARAM_REQ_REPORT   CO_BIT(16)
 #endif
 
 #define JUMP_TABLE_CHECKWORD            0x51525251
@@ -209,9 +210,9 @@ struct jump_table_t
     uint8_t boot_uart_pc_en_magic;  // when pc6 and pc7 are used for boot up, this byte need to be set to 0x55 for enable double check
     uint8_t initial_qspi_bandrate;
 
-    uint8_t enable_activity_num;
-    uint8_t enable_adv_activity_num;
-    uint8_t enable_con_num;
+    uint8_t enable_activity_num;    // indicate how many activities can be created at the same time
+    uint8_t enable_adv_activity_num;// indicate how many adv buffer reserved for advertising
+    uint8_t enable_con_num;         // indicate how many connections supported by host at the same time
     uint8_t em_ble_rx_buf_num;
     uint8_t em_ble_tx_buf_num;
 

@@ -53,6 +53,7 @@ enum mesh_event_type_t
     MESH_EVT_COMPO_DATA_REQ,            //!< Received composition data request from provisioner.
     MESH_EVT_ADV_REPORT,                //!< User interface for deal ADV packets received from adv bearer.
     MESH_EVT_MODEL_ADDR_PUBLISHED,      //!< Register publish address for a specified model, used in ali mesh provisioning procedure
+    MESH_EVT_PROXY_ADV_TIMEOUT_IND,     //!<Received information stop mesh proxy adv event
 };
 
 // Mesh network information update type
@@ -543,5 +544,6 @@ void mesh_info_store_into_flash(void);
  */
 void mesh_info_clear(void);
 
+void mesh_proxy_adv_stop(void);
 #endif
 

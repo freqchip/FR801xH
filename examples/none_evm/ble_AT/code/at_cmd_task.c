@@ -52,6 +52,7 @@ enum
     AT_CMD_IDX_AUTO_TRANSPARENT,
     AT_CMD_IDX_POWER,
     AT_CMD_IDX_ADVINT,
+    AT_CMD_IDX_CLR_DFT,
 };
 const char *cmds[] =
 {
@@ -77,6 +78,7 @@ const char *cmds[] =
     [AT_CMD_IDX_AUTO_TRANSPARENT] = "AUTO+++",
     [AT_CMD_IDX_POWER] = "POWER",
     [AT_CMD_IDX_ADVINT] = "ADVINT",
+    [AT_CMD_IDX_CLR_DFT] = "CLR_INFO",
 };
 struct at_buff_env gAT_buff_env = {0};
 struct at_ctrl gAT_ctrl_env = {0};
@@ -261,8 +263,9 @@ void at_scan_done(void *arg)
             else
                 memcpy(rsp_data_str,"NONE",sizeof("NONE"));
 
-            sprintf((char *)at_rsp,"\n\nNo: %d Addr:%s Rssi:%ddBm\n\n\r\nAdv data: \r\n %s\r\n",idx
+            sprintf((char *)at_rsp,"\n\nNo: %d Addr:%s Type:%d Rssi:%ddBm\n\n\r\nAdv data: \r\n %s\r\n",idx
                     ,addr_str
+                    ,gAT_buff_env.adv_rpt[idx].adv_addr_type
                     ,(signed char)gAT_buff_env.adv_rpt[idx].rssi
                     ,rsp_data_str);
             uart_put_data_noint(UART0,(uint8_t *)at_rsp, strlen((const char *)at_rsp));
@@ -394,7 +397,7 @@ void at_init_advertising_parameter(void)
 
     gap_adv_param_t adv_param;
     adv_param.adv_mode = GAP_ADV_MODE_UNDIRECT;
-    adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
+		adv_param.disc_mode = GAP_ADV_DISC_MODE_GEN_DISC;
     adv_param.adv_addr_type = GAP_ADDR_TYPE_PUBLIC;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
@@ -1009,12 +1012,20 @@ void at_recv_cmd_handler(struct recv_cmd_t *param)
                 case '?':
                     break;
                 case '=':
+                {
+                    uint8_t *pos_int_end;
                     str_to_hex_arr(buff,gAT_buff_env.master_peer_param.conn_param.peer_addr.addr,MAC_ADDR_LEN);
-                    break;
+                    pos_int_end = find_int_from_str(buff);
+                    buff = pos_int_end+1;
+                    gAT_buff_env.master_peer_param.conn_param.addr_type = atoi((const char *)buff);
+                    if(gAT_buff_env.master_peer_param.conn_param.addr_type > 1)
+                        gAT_buff_env.master_peer_param.conn_param.addr_type = 0;
+                }
+                break;
             }
             hex_arr_to_str(gAT_buff_env.master_peer_param.conn_param.peer_addr.addr,MAC_ADDR_LEN,peer_mac_addr_str);
             peer_mac_addr_str[MAC_ADDR_LEN*2] = 0;
-            sprintf((char *)at_rsp,"\r\n+CONNADD:%s\r\nOK",peer_mac_addr_str );
+            sprintf((char *)at_rsp,"\r\n+CONNADD:%s,%d\r\nOK",peer_mac_addr_str,gAT_buff_env.master_peer_param.conn_param.addr_type );
             at_send_rsp((char *)at_rsp);
         }
         break;
@@ -1240,6 +1251,14 @@ void at_recv_cmd_handler(struct recv_cmd_t *param)
                 default:
                     break;
             }
+        }
+        break;
+        case AT_CMD_IDX_CLR_DFT:
+        {
+            sprintf((char *)at_rsp,"+CLR_INFO\r\nOK");
+            at_send_rsp((char *)at_rsp);
+            uart_finish_transfers(UART0);
+            at_clr_flash_info();
         }
         break;
         default:

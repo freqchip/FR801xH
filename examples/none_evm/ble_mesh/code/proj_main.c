@@ -108,7 +108,7 @@ void initial_static_memory(uint8_t act_num,
 
 void user_init_static_memory(void)
 {
-    initial_static_memory(7, 4, 2, 8, 251, 8, 251, 64, 0x1000);
+    initial_static_memory(11, 5, 2, 8, 251, 8, 251, 37, 0x1000);
 }
 
 

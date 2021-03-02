@@ -72,6 +72,8 @@ uint16_t hid_client_msg_handler(gatt_msg_t *p_msg)
                     co_printf("report idx[%d]\r\n",rpt_info_idx);
                     show_reg(p_msg->param.msg.p_msg_data,p_msg->param.msg.msg_len,1);
                     ////process the received data here.
+
+                    ////process the received data here.
                 }
             }
         }

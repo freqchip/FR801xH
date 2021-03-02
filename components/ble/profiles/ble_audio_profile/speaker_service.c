@@ -18,8 +18,9 @@
 
 #include "speaker_service.h"
 #include "driver_flash.h"
+#if SPEAKER_DATA_CTRL
 #include "decoder.h"
-
+#endif
 /*
  * MACROS 
  */
@@ -70,8 +71,9 @@ uint8_t speaker_audio_rx_value[SPEAKER_AUDIO_RX_VALUE_LEN] = {0};
  * GLOBAL VARIABLES 
  */
 uint8_t speaker_svc_id = 0;
+#if SPEAKER_DATA_CTRL
 extern os_timer_t timer_refresh;// 用于刷新寄存器数据以及显示等
-
+#endif
 
 /*
  * LOCAL VARIABLES 
@@ -170,6 +172,7 @@ const gatt_attribute_t speaker_att_table[SPEAKER_IDX_NB] =
                                                             },
 };
 
+#if SPEAKER_DATA_CTRL
 #define SBC_DATA_FLASH_ADDR (USER_FLASH_BASE_ADDR+FLASH_PAGE_SIZE)//音频数据起始地址
 /*********************************************************************
  * @fn      store_sbc_to_flash
@@ -241,7 +244,7 @@ void store_sbc_to_flash(uint8_t *p_buf, uint32_t store_len)
     }
     SPEAKER_LOG("b\r\n");
 }
-
+#endif
 /*********************************************************************
  * @fn      sp_gatt_read_cb
  *
@@ -302,6 +305,7 @@ static void sp_gatt_read_cb(uint8_t *p_read, uint16_t *len, uint16_t att_idx,uin
  */
 static void sp_gatt_write_cb(uint8_t *write_buf, uint16_t len, uint16_t att_idx,uint8_t conn_idx)
 {
+#if SPEAKER_DATA_CTRL
 	uint8_t *pos  =  write_buf;
 	switch(att_idx){
 		case SPEAKER_IDX_ONOFF_VALUE:
@@ -383,7 +387,7 @@ static void sp_gatt_write_cb(uint8_t *write_buf, uint16_t len, uint16_t att_idx,
             }
             break;
     }
-
+#endif
 
 }
 

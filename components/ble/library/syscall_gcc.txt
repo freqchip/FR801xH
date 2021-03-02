@@ -344,6 +344,7 @@ __aeabi_memclr = 0x000008f7;
 __aeabi_memclr4 = 0x000008f7;
 __aeabi_memclr8 = 0x000008f7;
 _memset$wrapper = 0x000008fb;
+memset = 0x000008fb;
 memcmp = 0x0000090d;
 __scatterload = 0x00000929;
 __scatterload_rt2 = 0x00000929;

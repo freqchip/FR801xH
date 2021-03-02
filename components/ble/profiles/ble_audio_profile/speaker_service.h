@@ -53,7 +53,7 @@ enum
 #define SPEAKER_STATUS_REPORT_UUID    0xD002
 #define SPEAKER_AURIO_RX_UUID         0xD003
 
-
+#define SPEAKER_DATA_CTRL   0
 
 /*
  * TYPEDEFS (类型定义)

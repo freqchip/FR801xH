@@ -28,9 +28,9 @@
  */
  
 /*Prototypes */
-static void mesh_light_onoff_msg_cb(mesh_recv_msg_t *p_msg);
-static void mesh_light_level_msg_cb(mesh_recv_msg_t *p_msg);
-static void mesh_light_lightness_msg_cb(mesh_recv_msg_t *p_msg);
+static void mesh_light_onoff_msg_cb(mesh_model_msg_ind_t const *ind);
+static void mesh_light_level_msg_cb(mesh_model_msg_ind_t const *ind);
+static void mesh_light_lightness_msg_cb(mesh_model_msg_ind_t const *ind);
 
 
 
@@ -47,23 +47,23 @@ static void mesh_light_lightness_msg_cb(mesh_recv_msg_t *p_msg);
 static const mesh_model_t mesh_light_models[] = 
 {
     {
-        0,                              // element_idx
         GEN_ON_OFF_SERVER_MODEL_ID,     // model_id
         MODEL_TYPE_SIG,               // model_vendor
+        0,                              // element_idx
         mesh_light_onoff_msg_cb,        // msg_cb
     },
     
     {
-        0,
         GEN_LEVEL_SERVER_MODEL_ID,
         MODEL_TYPE_SIG,
+        0,
         mesh_light_level_msg_cb,
     },
     
     {
-        0,
         LIGHT_LIGHTNESS_SERVER_MODEL_ID,
         MODEL_TYPE_SIG,
+        0,
         mesh_light_lightness_msg_cb,
     },
 };
@@ -72,15 +72,15 @@ static const mesh_model_t mesh_light_models[] =
 /*
 * LOCAL FUNCTIONS (±¾µØº¯Êý)
 */
-static void mesh_light_onoff_msg_cb(mesh_recv_msg_t *p_msg)
+static void mesh_light_onoff_msg_cb(mesh_model_msg_ind_t const *ind)
 {
 }
 
-static void mesh_light_level_msg_cb(mesh_recv_msg_t *p_msg)
+static void mesh_light_level_msg_cb(mesh_model_msg_ind_t const *ind)
 {
 }
 
-static void mesh_light_lightness_msg_cb(mesh_recv_msg_t *p_msg)
+static void mesh_light_lightness_msg_cb(mesh_model_msg_ind_t const *ind)
 {
 }
 
@@ -113,8 +113,8 @@ void mesh_light_gen_onoff_set_msg(uint8_t element_idx, uint8_t onoff)
     pub_msg.model_id = GEN_ON_OFF_SERVER_MODEL_ID;
     pub_msg.opcode = GEN_ONOFF_SET_UNACK_MSG;
     pub_msg.msg_len = sizeof(mesh_gen_onoff_set_unack_t);
-    pub_msg.p_msg = (uint8_t *)&gen_onoff_msg;
-
+    //pub_msg.p_msg = (uint8_t *)&gen_onoff_msg;
+    memcpy(pub_msg.msg,(uint8_t *)&gen_onoff_msg,pub_msg.msg_len);
     
     mesh_publish_msg(&pub_msg);
 }

@@ -17,6 +17,7 @@
 #include "sys_utils.h"
 #include "driver_pmu.h"
 #include "driver_efuse.h"
+#include "driver_system.h"
 
 /*
  * EXTERNAL FUNCTIONS
@@ -529,12 +530,13 @@ void pmu_sub_init(void)
     ool_write(PMU_REG_ISO_CTRL, 0x02);
 
     /* debounce settings */
-    pmu_set_debounce_clk(16);   // set debounce clock to 1kHz
+    pmu_set_debounce_clk(8);   // set debounce clock to 1kHz
     pmu_onkey_set_debounce_cnt(9);
     pmu_adkey_set_debounce_cnt(9);
     pmu_bat_full_set_debounce_cnt(10);
-    pmu_lvd_set_debounce_cnt(2);
+    pmu_lvd_set_debounce_cnt(0);
     pmu_chg_dec_set_debounce_cnt(10);
+    ool_write(PMU_REG_POFWARN_CTRL, ool_read(PMU_REG_POFWARN_CTRL) | 0xf0);
 
 #if 0
     /*
@@ -852,8 +854,9 @@ __attribute__((weak)) __attribute__((section("ram_code"))) void charge_isr_ram(u
 
 __attribute__((weak)) __attribute__((section("ram_code"))) void lvd_isr_ram(void)
 {
-    co_printf("lvd\r\n");
+//    co_printf("lvd\r\n");
     pmu_disable_isr(PMU_ISR_LVD_EN);
+//    system_lvd_protect_handle();
 }
 
 __attribute__((weak)) __attribute__((section("ram_code"))) void otd_isr_ram(void)

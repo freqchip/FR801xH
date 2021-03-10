@@ -9,6 +9,7 @@
 #include "driver_pmu.h"
 #include "driver_flash.h"
 #include "flash_usage_config.h"
+#include "ota.h"
 
 #define PATCH_MAP_BASE_ADDR             0x20002000
 
@@ -182,6 +183,9 @@ __attribute__((section("ram_code"))) void patch_init(void)
     }
 
     FPB_Enable();
+#ifdef FLASH_PROTECT
+    *(volatile uint32_t *)0x500B0000|= (1<<14);
+#endif
 }
 
 extern uint32_t record_lr;
@@ -312,6 +316,11 @@ __attribute__((section("ram_code"))) __attribute__((weak)) void user_entry_after
     //pmu_calibration_start(PMU_CALI_SRC_LP_RC, __jump_table.lp_clk_calib_cnt);
 }
 
+__attribute__((weak)) __attribute__((section("ram_code"))) uint8_t app_get_ota_state(void)
+{
+    return 0;
+}
+
 __attribute__((section("ram_code"))) void flash_write(uint32_t offset, uint32_t length, uint8_t * buffer)
 {
     uint32_t last_space;
@@ -320,40 +329,51 @@ __attribute__((section("ram_code"))) void flash_write(uint32_t offset, uint32_t 
     GLOBAL_INT_DISABLE();
     disable_cache();
 #ifdef FLASH_PROTECT
+    *(volatile uint32_t *)0x500B0000 &= (~(1<<14));
     flash_protect_disable(0);
 #endif	
-    while(length) {
-        if(offset < 1*1024*1024) {
-            last_space = 1*1024*1024-offset;
-            if(last_space >= length) {
-                last_space = length;
+    if(((offset >= 2*__jump_table.image_size) 
+#ifdef FOR_4M_FLASH    
+            && (offset < 0x80000)
+#elif FOR_2M_FLASH
+            && (offset < 0x40000)
+#endif
+            ) || (app_get_ota_state()))
+    {
+        while(length) {
+            if(offset < 1*1024*1024) {
+                last_space = 1*1024*1024-offset;
+                if(last_space >= length) {
+                    last_space = length;
+                }
+                
+                flash_write_(offset, last_space, buffer);
+                offset += last_space;
+                buffer += last_space;
+                length -= last_space;
             }
-            
-            flash_write_(offset, last_space, buffer);
-            offset += last_space;
-            buffer += last_space;
-            length -= last_space;
-        }
-        else {
-            uint32_t base_addr = offset & (~(1*1024*1024-1));
-            uint32_t internal_offset = offset & (1*1024*1024-1);
+            else {
+                uint32_t base_addr = offset & (~(1*1024*1024-1));
+                uint32_t internal_offset = offset & (1*1024*1024-1);
 
-            *(volatile uint32_t *)0x500b0024 = 0x01000000+base_addr;
-            last_space = 1*1024*1024-internal_offset;
-            if(last_space >= length) {
-                last_space = length;
+                *(volatile uint32_t *)0x500b0024 = 0x01000000+base_addr;
+                last_space = 1*1024*1024-internal_offset;
+                if(last_space >= length) {
+                    last_space = length;
+                }
+
+                flash_write_(internal_offset, last_space, buffer);
+                offset += last_space;
+                buffer += last_space;
+                length -= last_space;
+                
+                *(volatile uint32_t *)0x500b0024 = 0x01000000;
             }
-
-            flash_write_(internal_offset, last_space, buffer);
-            offset += last_space;
-            buffer += last_space;
-            length -= last_space;
-            
-            *(volatile uint32_t *)0x500b0024 = 0x01000000;
         }
     }
 #ifdef FLASH_PROTECT
     flash_protect_enable(0);
+    *(volatile uint32_t *)0x500B0000 |= (1<<14);
 #endif	
     enable_cache(true);
     GLOBAL_INT_RESTORE();
@@ -366,11 +386,20 @@ __attribute__((section("ram_code"))) void flash_erase(uint32_t offset, uint32_t 
     GLOBAL_INT_DISABLE();
     disable_cache();
 #ifdef FLASH_PROTECT
+    *(volatile uint32_t *)0x500B0000 &= (~(1<<14));
     flash_protect_disable(0);
 #endif	
-    flash_erase_(offset, length);
+    if(((offset >= 2*__jump_table.image_size) 
+#ifdef FOR_4M_FLASH    
+        && (offset < 0x80000)
+#elif FOR_2M_FLASH
+        && (offset < 0x40000)
+#endif
+        ) || (app_get_ota_state()))
+        flash_erase_(offset, length);
 #ifdef FLASH_PROTECT
     flash_protect_enable(0);
+    *(volatile uint32_t *)0x500B0000 |= (1<<14);
 #endif	
     enable_cache(true);
     GLOBAL_INT_RESTORE();

@@ -168,7 +168,8 @@ struct otas_send_rsp
     uint8_t buffer[];
 };
 
-
+uint8_t app_get_ota_state(void);
+void app_set_ota_state(uint8_t state_flag);
 void ota_init(uint8_t conidx);
 void ota_deinit(uint8_t conidx);
 void app_otas_recv_data(uint8_t conidx,uint8_t *p_data,uint16_t len);

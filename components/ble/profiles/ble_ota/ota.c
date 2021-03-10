@@ -52,6 +52,7 @@ static uint8_t *ota_recving_buffer = NULL;
 static os_timer_t os_timer_ota;
 static uint32_t ota_addr_check,ota_addr_check_len = 0;
 #endif
+static uint8_t ota_state = 0;
 
 extern uint8_t app_boot_get_storage_type(void);
 extern void app_boot_save_data(uint32_t dest, uint8_t *src, uint32_t len);
@@ -60,6 +61,20 @@ extern void system_set_cache_config(uint8_t value, uint8_t count_10us);
 #ifdef OTA_CRC_CHECK
 void os_timer_ota_cb(void *arg);
 #endif
+
+__attribute__((section("ram_code"))) uint8_t app_get_ota_state(void)
+{
+    return ota_state;
+}
+
+__attribute__((section("ram_code"))) void app_set_ota_state(uint8_t state_flag)
+{
+    if(state_flag)
+        ota_state = 1;
+    else
+        ota_state = 0;
+}
+
 static uint32_t app_otas_get_curr_firmwave_version(void)
 {
     struct jump_table_t *jump_table_a = (struct jump_table_t *)0x01000000;
@@ -160,7 +175,7 @@ void ota_init(uint8_t conidx)
 void ota_deinit(uint8_t conidx)
 {
     ota_clr_buffed_pkt(conidx);
-
+    app_set_ota_state(0);
     if(ota_recving_buffer != NULL) {
         os_free(ota_recving_buffer);
         ota_recving_buffer = NULL;
@@ -220,6 +235,7 @@ void app_otas_recv_data(uint8_t conidx,uint8_t *p_data,uint16_t len)
         //gap_conn_param_update(conidx, 12, 12, 0, 500);
         system_latency_disable(conidx);
         gatt_mtu_exchange_req(conidx);
+        app_set_ota_state(1);
 
         if(ota_recving_buffer == NULL) {
             ota_recving_buffer = os_malloc(512);
@@ -504,6 +520,7 @@ void app_otas_recv_data(uint8_t conidx,uint8_t *p_data,uint16_t len)
                 }
 #endif			   
             }
+            app_set_ota_state(0);
             uart_finish_transfers(UART1_BASE);
             ota_clr_buffed_pkt(conidx);
             //NVIC_SystemReset();

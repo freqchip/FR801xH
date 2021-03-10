@@ -229,7 +229,7 @@ const gatt_attribute_t hid_profile_att_table[] =
     
     [HID_INFO_IDX]                  =   { 
                                             { UUID_SIZE_2, UUID16_ARR(HID_INFORMATION_UUID) },
-                                            GATT_PROP_READ, 
+                                            GATT_PROP_AUTHEN_READ, 
                                             sizeof(hid_info_value), 
                                             NULL,
                                         },
@@ -510,8 +510,8 @@ static uint16_t hid_gatt_msg_handler(gatt_msg_t *p_msg)
     switch(p_msg->msg_evt)
     {
         case GATTC_MSG_READ_REQ:
-            if(hid_link_enable[p_msg->conn_idx] == false)
-                return 0xffff;  //save this msg
+            //if(hid_link_enable[p_msg->conn_idx] == false)
+               // return 0xffff;  //save this msg
                 
             if(p_msg->att_idx == HID_REPORT_MAP_IDX)
             {
@@ -540,8 +540,8 @@ static uint16_t hid_gatt_msg_handler(gatt_msg_t *p_msg)
             break;
 
         case GATTC_MSG_WRITE_REQ:
-            if(hid_link_enable[p_msg->conn_idx] == false)
-                return 0xffff;  //save this msg
+            //if(hid_link_enable[p_msg->conn_idx] == false)
+                //return 0xffff;  //save this msg
 
             if(p_msg->att_idx == HID_BOOT_KEY_IN_CCCD_IDX)
             {
@@ -597,8 +597,8 @@ static uint16_t hid_gatt_msg_handler(gatt_msg_t *p_msg)
 }
 void hid_service_enable(uint8_t conidx)
 {
-    hid_link_enable[conidx] = true;
-    os_task_process_saved_msg(gatt_get_task_no_from_prf_id(hid_svc_id));
+    //hid_link_enable[conidx] = true;
+    //os_task_process_saved_msg(gatt_get_task_no_from_prf_id(hid_svc_id));
 }
 
 /*********************************************************************

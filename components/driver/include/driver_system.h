@@ -388,6 +388,17 @@ void system_power_off(bool aldo_bypass);
 void system_set_tx_power(enum rf_tx_power_t tx_power);
 
 /*********************************************************************
+ * @fn      system_lvd_protect_handle
+ *
+ * @brief   Protection measures are maded when device in low power state.
+ *
+ * @param   None.
+ *
+ * @return  None.
+ */
+void system_lvd_protect_handle(void);
+
+/*********************************************************************
  * @fn      system_optimize_power_consumption_set, this function has to
  *          be called in function user_custom_parameters.
  *

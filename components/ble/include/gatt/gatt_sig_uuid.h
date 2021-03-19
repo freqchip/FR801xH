@@ -95,6 +95,7 @@
 #define CSC_SERV_UUID                   0x1816  // Cycling Speed and Cadence
 #define CYCPWR_SERV_UUID                0x1818  // Cycling Power
 #define LOC_NAV_SERV_UUID               0x1819  // Location and Navigation
+#define FITMACHINE_SERV_UUID            0x1826  // Fitmachine
   
 /**
  * GATT Characteristic UUIDs
@@ -176,6 +177,23 @@
 #define LN_FEATURE_UUID                 0x2A6A  // LN Feature
 #define LN_CTRL_PT_UUID                 0x2A6B  // LN Control Point  
   
+#define GATT_UUID_FITNESS_MACHINE_FEATURE           0x2ACC
+#define GATT_UUID_TREADMILL_DATA                    0x2ACD //跑步机数据
+#define GATT_UUID_CROSS_TRAINER_DATA                0x2ACE //椭圆机数据
+#define GATT_UUID_ROWER_DATA                        0x2AD1 //划船机数据
+#define GATT_UUID_INDOOR_BIKE_DATA                  0x2AD2 //单车数据
+#define GATT_UUID_STEP_CLIMBER_DATA                 0x2ACF //攀岩机
+#define GATT_UUID_STAIR_CLIMBER_DATA                0x2AD0  //爬楼梯机
+
+#define GATT_UUID_TRAINING_STATUS                   0x2AD3
+#define GATT_UUID_SUPPORT_SPEED_RANGE               0x2AD4
+#define GATT_UUID_SUPPORT_INCLINATION_RANGE         0x2AD5
+#define GATT_UUID_SUPPORT_RESISTANCE_LEVEL_RANGE    0x2AD6
+#define GATT_UUID_SUPPORT_HEART_RATE_RANGE          0x2AD7
+#define GATT_UUID_SUPPORT_POWER_RANGE               0x2AD8
+#define GATT_UUID_FITNESS_MACHINE_CONTROL_POINT     0x2AD9
+#define GATT_UUID_FITNESS_MACHINE_STATUS            0x2ADA
+
 /**
  * GATT Unit UUIDs
  */
@@ -258,7 +276,9 @@
 #define HI_UINT16(a) (((a) >> 8) & 0xFF)
 #define LO_UINT16(a) ((a) & 0xFF)
 
-#define UUID16_ARR(uuid)  {uuid&0xff,(uuid&0xff00)>>8}
+#define UUID16_ARR(uuid16)  {uuid16&0xff,(uuid16&0xff00)>>8}
+#define UUID128_ARR(uuid16)       {0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80, \
+                                            0x00, 0x10, 0x00, 0x00, (uuid16 & 0xff),(uuid16&0xff00)>>8, 0x00, 0x00}
 
 /*********************************************************************
  * TYPEDEFS

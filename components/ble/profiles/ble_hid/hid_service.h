@@ -66,7 +66,7 @@ enum
     HID_SERVICE_IDX,                // HID Service
 
 #if ((HID_DEV & HID_DEV_MAP_EXT_REF) == HID_DEV_MAP_EXT_REF)
-    HID_INCLUDED_SERVICE_IDX,       // Included Service
+    //HID_INCLUDED_SERVICE_IDX,       // Included Service
 #endif
 
     HID_INFO_DECL_IDX,              // HID Information characteristic declaration

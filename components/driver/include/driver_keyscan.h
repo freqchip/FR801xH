@@ -13,8 +13,7 @@
 typedef struct
 {
     uint8_t row_en;         // pin selection for row, each bits[7:0] map to PD[7:0]
-    uint32_t col_en;        // pin selection for column, {PC[3:0], PB[7:0], PA[7:0]}
-                            // PC3 and PA0 should not be used at the same time.
+    uint32_t col_en;        // pin selection for column, {{PD[7:4],PC[3:0]}, PB[7:0], PA[7:0]}
     uint8_t row_map_sel;    // reserved
 }keyscan_param_t;
 /*********************************************************************

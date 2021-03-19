@@ -13,11 +13,14 @@
 
 #include "co_printf.h"
 #include "co_math.h"
+#include "jump_table.h"
 
 #include "sys_utils.h"
 #include "driver_pmu.h"
 #include "driver_efuse.h"
 #include "driver_system.h"
+
+#define ENABLE_SYSTEM_PROTECTION_IN_LVD             0
 
 /*
  * EXTERNAL FUNCTIONS
@@ -530,7 +533,11 @@ void pmu_sub_init(void)
     ool_write(PMU_REG_ISO_CTRL, 0x02);
 
     /* debounce settings */
+#if ENABLE_SYSTEM_PROTECTION_IN_LVD == 1
+    pmu_set_debounce_clk(0);   // set debounce clock to 1kHz
+#else
     pmu_set_debounce_clk(8);   // set debounce clock to 1kHz
+#endif
     pmu_onkey_set_debounce_cnt(9);
     pmu_adkey_set_debounce_cnt(9);
     pmu_bat_full_set_debounce_cnt(10);
@@ -855,8 +862,11 @@ __attribute__((weak)) __attribute__((section("ram_code"))) void charge_isr_ram(u
 __attribute__((weak)) __attribute__((section("ram_code"))) void lvd_isr_ram(void)
 {
 //    co_printf("lvd\r\n");
+#if ENABLE_SYSTEM_PROTECTION_IN_LVD == 0
     pmu_disable_isr(PMU_ISR_LVD_EN);
-//    system_lvd_protect_handle();
+#else
+    system_lvd_protect_handle();
+#endif
 }
 
 __attribute__((weak)) __attribute__((section("ram_code"))) void otd_isr_ram(void)
@@ -888,8 +898,19 @@ __attribute__((weak)) __attribute__((section("ram_code"))) void onkey_isr_ram(vo
 __attribute__((section("ram_code"))) void pmu_isr_ram_C(unsigned int* hardfault_args)
 {
     uint16_t clr_bits=0;
-    uint16_t pmu_irq_st = pmu_get_isr_state();
-    //co_printf("pmu_isr=%x\r\n",pmu_irq_st);
+    uint16_t pmu_irq_st;
+
+#if ENABLE_SYSTEM_PROTECTION_IN_LVD == 1
+    system_set_pclk(SYSTEM_SYS_CLK_12M);
+    frspim_init(3);
+    pmu_irq_st = pmu_get_isr_state();
+    if((pmu_irq_st & 0x0004) == 0) {
+        frspim_init(2);
+        system_set_pclk(__jump_table.system_clk);
+    }
+#else
+    pmu_irq_st = pmu_get_isr_state();
+#endif
 
     if(pmu_irq_st & PMU_ISR_BAT_STATE)
     {
@@ -984,4 +1005,11 @@ __attribute__((section("ram_code"))) void pmu_isr_ram_C(unsigned int* hardfault_
 
     if(clr_bits)
         pmu_clear_isr_state(clr_bits);
+
+#if ENABLE_SYSTEM_PROTECTION_IN_LVD == 1
+    if(pmu_irq_st & 0x0004) {
+        frspim_init(2);
+        system_set_pclk(__jump_table.system_clk);
+    }
+#endif
 }

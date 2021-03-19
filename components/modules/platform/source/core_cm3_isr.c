@@ -8,8 +8,9 @@
 //#include "uart.h"
 
 extern void platform_reset_patch(uint32_t error);
-void HardFault_Handler_C(unsigned int* hardfault_args)
+__attribute__((section("ram_code"))) void HardFault_Handler_C(unsigned int* hardfault_args)
 {
+    co_delay_100us(500);
     co_printf("Crash, dump regs:\r\n");
     co_printf("PC    = 0x%08X\r\n",hardfault_args[6]);
     co_printf("LR    = 0x%08X\r\n",hardfault_args[5]);

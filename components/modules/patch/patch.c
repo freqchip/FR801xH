@@ -9,7 +9,6 @@
 #include "driver_pmu.h"
 #include "driver_flash.h"
 #include "flash_usage_config.h"
-#include "ota.h"
 
 #define PATCH_MAP_BASE_ADDR             0x20002000
 
@@ -79,7 +78,7 @@ struct patch_element_t patch_elements[] =
         .replace_function = ke_free_user,
     },
 #else
-#if 0
+#if 1
     [11] = {
         .patch_pc = 0x00000001,
     },

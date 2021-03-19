@@ -93,7 +93,7 @@ __initial_sp    EQU     0x40004000
                 DCD     0                         ; 15
 
                 
-				AREA    |.text|, CODE, READONLY
+				AREA    ram_code, CODE, READONLY
 				
 HardFault_Handler_Ram   PROC
                 IMPORT  HardFault_Handler_C

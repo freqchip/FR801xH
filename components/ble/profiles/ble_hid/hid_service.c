@@ -212,12 +212,12 @@ const gatt_attribute_t hid_profile_att_table[] =
                                         },
 
 #if ((HID_DEV & HID_DEV_MAP_EXT_REF) == HID_DEV_MAP_EXT_REF)
-    [HID_INCLUDED_SERVICE_IDX]      =   { 
-                                            { UUID_SIZE_2, UUID16_ARR(GATT_INCLUDE_UUID) },
-                                            GATT_PROP_READ,
-                                            0,
-                                            NULL,
-                                        },
+    //[HID_INCLUDED_SERVICE_IDX]      =   { 
+    //                                        { UUID_SIZE_2, UUID16_ARR(GATT_INCLUDE_UUID) },
+    //                                        GATT_PROP_READ,
+    //                                        0,
+    //                                        NULL,
+    //                                    },
 #endif //((HID_DEV & HID_DEV_MAP_EXT_REF) == HID_DEV_MAP_EXT_REF)
 
     [HID_INFO_DECL_IDX]             =   { 

@@ -54,6 +54,7 @@ void system_prevent_sleep_clear(void);
 void system_prevent_sleep_set(void);
 
 __attribute__((section("ram_code"))) void retry_handshake(void);
+void platform_reset_patch(uint32_t error);
 
 #endif  //_SYS_UTILS_H
 

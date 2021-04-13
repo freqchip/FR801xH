@@ -20,6 +20,7 @@
 #include <string.h>
 #include "os_mem.h"
 #include "adpcm_ms.h"
+#include "adpcm_ima.h"
 #include "user_task.h"
 
 /*
@@ -27,6 +28,9 @@
  */
 #define DEC_DBG FR_DBG_OFF
 #define DEC_LOG FR_LOG(DEC_DBG)
+
+#define ADPCM_SEL_MS
+//#define ADPCM_SEL_IMA
 
 /*
  * CONSTANTS 
@@ -427,7 +431,12 @@ void  decoder_play_next_frame_handler(void *arg)
                 // TBD
             }
 
+            #ifdef ADPCM_SEL_IMA
+            pcm_frame = (struct decoder_pcm_t *)os_zalloc(sizeof(struct decoder_pcm_t) + 2*(decoder_env.frame_len+16)*2);
+            #endif
+            #ifdef ADPCM_SEL_MS
             pcm_frame = (struct decoder_pcm_t *)os_zalloc(sizeof(struct decoder_pcm_t) + 2*(decoder_env.frame_len+8)*2);
+            #endif
             if(pcm_frame == NULL)
             {
                // return KE_MSG_SAVED;
@@ -441,7 +450,14 @@ void  decoder_play_next_frame_handler(void *arg)
 
             if(decoder_hold_flag == false)
             {
+                #ifdef ADPCM_SEL_IMA
                 adpcm_decode_frame(decoder_env.decoder_context, (short *)&pcm_frame->pcm_data[0], (int *)&pcm_len, buffer, decoder_env.frame_len);
+                pcm_len = adpcm_decode_block ((void *)&pcm_frame->pcm_data[0], (const void *)buffer, decoder_env.frame_len, 1);
+                pcm_len *= 2;
+                #endif
+                #ifdef ADPCM_SEL_MS
+                adpcm_decode_frame(decoder_env.decoder_context, (short *)&pcm_frame->pcm_data[0], (int *)&pcm_len, buffer, decoder_env.frame_len);
+                #endif
             }
             else
                 memset((uint8_t *)&pcm_frame->pcm_data[0],0x0,pcm_len);

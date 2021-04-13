@@ -38,6 +38,7 @@ void user_custom_parameters(void)
     __jump_table.addr.addr[4] = 0x01;
     __jump_table.addr.addr[5] = 0xc1;
     __jump_table.system_clk = SYSTEM_SYS_CLK_48M;
+   // __jump_table.system_option &= ~(SYSTEM_OPTION_PRINT_UART1);   //no log
 }
 
 __attribute__((section("ram_code"))) void user_entry_before_sleep_imp(void)

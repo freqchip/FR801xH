@@ -166,6 +166,7 @@ static void button_anti_shake_timeout_handler(void *param)
 
     if(gpio_value == curr_button_before_anti_shake)
     {
+        gpio_value &= ~GPIO_PC4;    //ignore PC4, because of inner usage in lib
         if(gpio_value != 0)
         {
             co_printf("press_key:%08X\r\n",gpio_value);

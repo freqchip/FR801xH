@@ -38,6 +38,7 @@ __attribute__((section("ram_code"))) void uart0_isr_ram(void)
     else if(int_id == 0x06)
     {
         uart_reg->u3.iir.int_id = int_id;
+        uart_reg->u2.ier.erlsi = 0;
     }
 }
 __attribute__((section("ram_code"))) void uart1_isr_ram(void)
@@ -56,6 +57,7 @@ __attribute__((section("ram_code"))) void uart1_isr_ram(void)
     else if(int_id == 0x06)
     {
         uart_reg->u3.iir.int_id = int_id;
+        uart_reg->u2.ier.erlsi = 0;
     }
 }
 
@@ -297,17 +299,34 @@ void demo_i2c(void)
 }
 #endif
 
-#if (ADC_DEMO_ENABLE)
-#include "adc.h"
-#include "user_timer.h"
-os_timer_t adc_timer;
-void adc_timer_fn(void)
-{
+#if ADC_DEMO_ENABLE
+#include "driver_iomux.h"
+#include "driver_adc.h"
+#include "os_timer.h"
 
+os_timer_t adc_timer;
+void adc_tim_fn(void *arg)
+{
+    struct adc_cfg_t cfg;
+    uint16_t result;
+    memset((void*)&cfg, 0, sizeof(cfg));
+    cfg.src = ADC_TRANS_SOURCE_PAD;
+    cfg.ref_sel = ADC_REFERENCE_AVDD;
+    cfg.channels = 0x01;
+    cfg.route.pad_to_sample = 1;
+    cfg.clk_sel = ADC_SAMPLE_CLK_24M_DIV13;
+    cfg.clk_div = 0x3f;
+    adc_init(&cfg);
+    adc_enable(NULL, NULL, 0);
+    adc_get_result(ADC_TRANS_SOURCE_PAD, 0x01, &result);
+    co_printf("result:%d\r\n",result);
 }
 void demo_adc(void)
 {
-
+    co_printf("adc demo\r\n");
+    system_set_port_mux(GPIO_PORT_D, GPIO_BIT_4, PORTD4_FUNC_ADC0);
+    os_timer_init(&adc_timer,adc_tim_fn,NULL);
+    os_timer_start(&adc_timer,1000,1);
 }
 #endif
 
@@ -492,11 +511,13 @@ void demo_keyscan(void)
     param.row_en = 0xf0;    //PD4~PD7  as row
     param.col_en = 0xf0;    //PA4~PA7  as col
     param.row_map_sel = 0x0;
-    //pmu_set_pin_pull(GPIO_PORT_A, BIT(4)|BIT(5)|BIT(6)|BIT(7), true);
-    //pmu_set_pin_pull(GPIO_PORT_D, BIT(4)|BIT(5)|BIT(6)|BIT(7), true);
+    pmu_set_pin_pull(GPIO_PORT_A, BIT(4)|BIT(5)|BIT(6)|BIT(7), true);
+    pmu_set_pin_pull(GPIO_PORT_D, BIT(4)|BIT(5)|BIT(6)|BIT(7), true);
 
     keyscan_init(&param);
     key_task_id = os_task_create( key_task_func);
+
+    system_sleep_enable();
 }
 #endif
 
@@ -691,7 +712,15 @@ static void button_anti_shake_timeout_handler(void *param)
 
     if(gpio_value == curr_button_before_anti_shake)
     {
-        co_printf("press_key:%08X\r\n",gpio_value);
+        gpio_value &= ~GPIO_PC4;    //ignore PC4, because of inner usage in lib
+        if(gpio_value == 0)
+        {
+            co_printf("L\r\n");
+        }
+        else
+        {
+            co_printf("K:%08X\r\n",gpio_value);
+        }
     }
 }
 __attribute__((section("ram_code"))) void pmu_gpio_isr_ram(void)
@@ -709,8 +738,8 @@ void demo_pmu_exti(void)
 {
     co_printf("pmu exti isr\r\n");
     os_timer_init(&button_anti_shake_timer, button_anti_shake_timeout_handler, NULL);
-    pmu_set_pin_pull(GPIO_PORT_D, BIT(6), true);		//PD6 low voltage ->isr
-    //pmu_set_pin_pull(GPIO_PORT_D, BIT(7), false);		//PD7 high voltage ->isr
+    pmu_set_pin_pull(GPIO_PORT_D, BIT(6), true);        //PD6 low voltage ->isr
+    //pmu_set_pin_pull(GPIO_PORT_D, BIT(7), false);     //PD7 high voltage ->isr
     pmu_port_wakeup_func_set(GPIO_PD6|GPIO_PD7);    //PD7 pin should connect to GND with 4.7K resistor
 }
 

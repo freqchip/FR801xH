@@ -384,7 +384,7 @@ __attribute__((section("ram_code"))) void uart0_isr_ram(void)
 
     if(int_id == 0x04 || int_id == 0x0c )   /* Receiver data available or Character time-out indication */
     {
-        while(uart_reg_ram->lsr & 0x01)
+        //while(uart_reg_ram->lsr & 0x01)
         {
             app_at_recv_c(uart_reg_ram->u1.data);
         }
@@ -392,6 +392,8 @@ __attribute__((section("ram_code"))) void uart0_isr_ram(void)
     else if(int_id == 0x06)
     {
         uart_reg_ram->lsr = uart_reg_ram->lsr;
+        uart_reg_ram->u3.iir.int_id = int_id;
+        uart_reg_ram->u2.ier.erlsi = 0;
     }
 }
 
@@ -512,7 +514,7 @@ void at_store_info_to_flash(void)
         memcpy(at_flash_buf + MAC_ADDR_OFFSET, local_mac.addr, sizeof(mac_addr_t));
         memcpy(at_flash_buf + PEER_MAC_ADDR_OFFSET, (uint8_t *)&gAT_buff_env.master_peer_param, sizeof(gAT_buff_env.master_peer_param) );
         memcpy(at_flash_buf + SPSS_UUID_OFFSET, spss_uuids, sizeof(spss_uuids) );
-
+#if 1	//if you only want to use 1 page for info storage, mask below code
         gAT_buff_env.flash_write_cnt++;
         if(gAT_buff_env.flash_write_cnt > 20000)
         {
@@ -524,6 +526,7 @@ void at_store_info_to_flash(void)
             flash_erase(USER_FLASH_MAX_PAGE_ADDR, FLASH_PAGE_SIZE);
             flash_write(USER_FLASH_MAX_PAGE_ADDR, 2, (uint8_t *)&gAT_buff_env.flash_page_idx);
         }
+#endif
         LOG_INFO("flash_store\r\n");
 //store at_flash_buff
         memcpy(at_flash_buf,(uint8_t *)&gAT_buff_env.flash_write_cnt,sizeof(uint16_t));

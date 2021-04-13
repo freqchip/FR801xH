@@ -506,6 +506,13 @@ typedef struct
     uint8_t peer_irk[16];       //!<peer_irk
 } gap_ral_t;
 
+// channel map set parameters
+typedef struct
+{
+    uint8_t     conidx;
+    uint8_t     map[5];//5-byte channel map array
+}gap_channel_map_t;
+
 /*
  * GLOBAL VARIABLES
  */
@@ -1106,6 +1113,19 @@ uint8_t gap_get_latest_bond_idx(void);
  * @return  None
  */
 void gap_param_update_rsp(gap_evt_link_param_update_rsp_t *rsp);
+
+/**********************************************************************
+ * @fn      gap_set_channel_map
+ *
+ * @brief   rsp     - update channel map parameters.
+ *
+ * @param   map_buf     - @ref gap_channel_map_t.
+ *
+ * @return  None
+ */
+void gap_set_channel_map(gap_channel_map_t *channel_map);
+
+
 #endif // end of #ifndef GAP_API_H
 
 

@@ -158,7 +158,7 @@ static void app_gap_evt_cb(gap_event_t *p_event)	//GAP callback function, p_evne
             }
         }
         break;
-
+		
 		case GAP_EVT_LINK_PARAM_REQ:
 		{
 		    
@@ -177,8 +177,8 @@ static void app_gap_evt_cb(gap_event_t *p_event)	//GAP callback function, p_evne
 			rsp.src_id=p_event->param.link_update_req.dst_id;
 			rsp.dst_id=p_event->param.link_update_req.src_id;
 			rsp.conidx=p_event->param.link_update_req.conidx;
-			rsp.intv_max=p_event->param.link_update_req.intv_max;
-			rsp.intv_min=p_event->param.link_update_req.intv_min;		
+			rsp.ce_len_max=p_event->param.link_update_req.intv_max;
+			rsp.ce_len_min=p_event->param.link_update_req.intv_min;		
 			gap_param_update_rsp(&rsp);	
 			co_printf("gap_param_update_response \r\n");	
 		}

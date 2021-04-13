@@ -1,0 +1,13 @@
+1 根据红外原理图进行画板，原理图包含红外发送，和红外学习。其中，
+PC5是控制红外发送，需要分配到带数字pwm功能的普通gpio口
+PC6和PC7控制红外学习，PC6是外部中断管脚，需要分配到含数字中断的普通gpio口。PC7 是控制红外学习使能禁止，需要分配到普通gpio口
+
+2 将driver/IR里的c文件添加到工程的driver目录
+
+3 修改driver_ir_send.c内部的宏IR_LEARN_PIN_INIT，IR_LEARN_ENABLE，IR_LEARN_DISENABLE 到实际的红外学习控制管脚。
+修改 static int IR_task_func(os_event_t *param)函数内部，红外发送管脚到实际管脚。
+修改 uint8_t IR_start_learn(void) ，void IR_stop_learn(void)函数内部，红外学习中断管脚到实际管脚。
+
+4 如何调试IR发送。
+逻辑分析仪接PC5，发送分析发送的数据。
+如示例1所示，发送的数据是0xBB，连续pwm脉冲，间隔1.68ms是1，间隔560us是0

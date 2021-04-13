@@ -176,7 +176,7 @@ typedef struct
 typedef struct
 {
     uint16_t    msg_len;        //!< GATT message length
-    void        *p_msg_data;    //!< GATT message data pointer
+    uint8_t     *p_msg_data;    //!< GATT message data pointer
 } gatt_msg_hdl_t;
 
 /**

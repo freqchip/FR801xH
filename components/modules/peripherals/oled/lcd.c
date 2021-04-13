@@ -873,6 +873,52 @@ void demo_LCD_APP(void)
 	LCD_DisPIC(picture_idx++);     
 }
 
+#include "ie2.h"
+#define LCD_MAX_ROW     240
+#define LCD_MAX_COLUMN  240
+#define LCD_MAX_COLUMN_X2  480
+static uint8_t lcd_buf[LCD_MAX_COLUMN_X2];
+static void get_char_lcd_buff_from_point_array(uint8_t point_byte,uint8_t *buff,uint8_t color,uint8_t bg_color)
+{
+    uint8_t i=8;
+    do
+    {
+        i--;
+        if( point_byte & BIT(i) )
+        {
+            *(buff + ((7-i) <<1) ) = color;
+            *(buff + ((7-i) <<1) + 1) = color;
+        }
+        else
+        {
+            *(buff + ((7-i)<<1) ) = bg_color;
+            *(buff + ((7-i)<<1) + 1) = bg_color;
+        }
+    }
+    while(i > 0);
+}
+#define MOD(x,y)  ( (x%y)?(x/y+1):(x/y) )
+void LCD_DisBWPic(uint8_t pos_x,uint8_t pos_y,uint8_t len_x,uint8_t len_y,uint8_t *image_arr,uint8_t color,uint8_t bg_color)
+{
+	  uint8_t i=0;
+    uint8_t byte_idx_x = 0;
+    uint32_t offset = 0;
+	
+    uint8_t byte_num_x = MOD(len_x,8);
+	  uint8_t *data_x;
+    for(i = 0; i<len_y ; i++)
+    {
+				data_x = &image_arr[offset];
+				offset += byte_num_x;
+        byte_idx_x = 0;
+        while(byte_idx_x < byte_num_x)
+        {
+            get_char_lcd_buff_from_point_array(data_x[byte_idx_x], lcd_buf + (byte_idx_x << 4),color,bg_color);
+            byte_idx_x++;
+        }
+        LCD_DriverWriteDataBuf(lcd_buf, len_x<<1);
+    }
+}
 /*********************************************************************
 * @fn		LCD_DisPIC
 *
@@ -890,7 +936,8 @@ void LCD_DisPIC(uint8_t pic_idx)
 	}else if(pic_idx == 1){
 		LCD_DriverWriteDataBuf((uint8_t *)( gImage_erweima240x240), 480*240);
 	}else if(pic_idx == 2){
-		LCD_Clear_quick(RED);
+		//LCD_Clear_quick(RED);
+		LCD_DisBWPic(0, 0, 240, 240,(uint8_t *)&gImage_ie2[0],0x55,0x00);
 	}else if(pic_idx == 3){
 		LCD_Clear_quick(GREEN);
 	}else if(pic_idx == 4){

@@ -533,15 +533,11 @@ void pmu_sub_init(void)
     ool_write(PMU_REG_ISO_CTRL, 0x02);
 
     /* debounce settings */
-#if ENABLE_SYSTEM_PROTECTION_IN_LVD == 1
-    pmu_set_debounce_clk(0);   // set debounce clock to 1kHz
-#else
-    pmu_set_debounce_clk(8);   // set debounce clock to 1kHz
-#endif
+    pmu_set_debounce_clk(16);   // set debounce clock to 1kHz
     pmu_onkey_set_debounce_cnt(9);
     pmu_adkey_set_debounce_cnt(9);
     pmu_bat_full_set_debounce_cnt(10);
-    pmu_lvd_set_debounce_cnt(0);
+    pmu_lvd_set_debounce_cnt(2);
     pmu_chg_dec_set_debounce_cnt(10);
     ool_write(PMU_REG_POFWARN_CTRL, ool_read(PMU_REG_POFWARN_CTRL) | 0xf0);
 
@@ -862,11 +858,7 @@ __attribute__((weak)) __attribute__((section("ram_code"))) void charge_isr_ram(u
 __attribute__((weak)) __attribute__((section("ram_code"))) void lvd_isr_ram(void)
 {
 //    co_printf("lvd\r\n");
-#if ENABLE_SYSTEM_PROTECTION_IN_LVD == 0
     pmu_disable_isr(PMU_ISR_LVD_EN);
-#else
-    system_lvd_protect_handle();
-#endif
 }
 
 __attribute__((weak)) __attribute__((section("ram_code"))) void otd_isr_ram(void)
@@ -900,17 +892,7 @@ __attribute__((section("ram_code"))) void pmu_isr_ram_C(unsigned int* hardfault_
     uint16_t clr_bits=0;
     uint16_t pmu_irq_st;
 
-#if ENABLE_SYSTEM_PROTECTION_IN_LVD == 1
-    system_set_pclk(SYSTEM_SYS_CLK_12M);
-    frspim_init(3);
     pmu_irq_st = pmu_get_isr_state();
-    if((pmu_irq_st & 0x0004) == 0) {
-        frspim_init(2);
-        system_set_pclk(__jump_table.system_clk);
-    }
-#else
-    pmu_irq_st = pmu_get_isr_state();
-#endif
 
     if(pmu_irq_st & PMU_ISR_BAT_STATE)
     {
@@ -992,6 +974,17 @@ __attribute__((section("ram_code"))) void pmu_isr_ram_C(unsigned int* hardfault_
 
     if(pmu_irq_st & PMU_ISR_GPIO_STATE)
     {
+#if ENABLE_SYSTEM_PROTECTION_IN_LVD == 1
+        if(ool_read(PMU_REG_GPIOC_V) & CO_BIT(4)) {
+            co_printf("lvd.\r\n");
+            system_lvd_protect_handle();
+        }
+#else
+        uint8_t portc_value = ool_read(PMU_REG_GPIOC_V);
+        if(portc_value & CO_BIT(4)) {
+            ool_write(PMU_REG_PORTC_LAST, portc_value);
+        }
+#endif
         clr_bits |= PMU_ISR_GPIO_CLR;
         pmu_gpio_isr_ram();
     }
@@ -1005,11 +998,5 @@ __attribute__((section("ram_code"))) void pmu_isr_ram_C(unsigned int* hardfault_
 
     if(clr_bits)
         pmu_clear_isr_state(clr_bits);
-
-#if ENABLE_SYSTEM_PROTECTION_IN_LVD == 1
-    if(pmu_irq_st & 0x0004) {
-        frspim_init(2);
-        system_set_pclk(__jump_table.system_clk);
-    }
-#endif
 }
+

@@ -288,8 +288,10 @@ static uint16_t simple_central_msg_handler(gatt_msg_t *p_msg)		//GATT event call
         }
         break;
         case GATTC_MSG_SVC_REPORT:
-            gatt_svc_report_t *svc_rpt = (gatt_svc_report_t *)(p_msg->param.msg.p_msg_data);
-            co_printf("svc:%d,start_hdl:%d,end_hdl:%d\r\n",svc_rpt->uuid_len,svc_rpt->start_hdl,svc_rpt->end_hdl);
+			{
+				gatt_svc_report_t *svc_rpt = (gatt_svc_report_t *)(p_msg->param.msg.p_msg_data);
+				co_printf("svc:%d,start_hdl:%d,end_hdl:%d\r\n",svc_rpt->uuid_len,svc_rpt->start_hdl,svc_rpt->end_hdl);
+			}
 #if 0
             if(memcmp(svc_rpt->uuid,spss_svc_uuid,16) == 0)
             {

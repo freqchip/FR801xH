@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include "adpcm.h"
-
+//This code is for dialogic ADPCM 
 /* Intel ADPCM step variation table */
 static int indexTable[16] = {
 	-1, -1, -1, -1, 2, 4, 6, 8,

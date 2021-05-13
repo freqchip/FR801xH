@@ -559,6 +559,30 @@ void uart0_write_for_hci(uint8_t *bufptr, uint32_t size, uart_int_callback callb
  */
 void uart1_write_for_hci(uint8_t *bufptr, uint32_t size, uart_int_callback callback, void *dummy);
 #define uart1_write(bufptr, size, callback)      uart1_write_for_hci(bufptr, size, callback, NULL)
+/*********************************************************************
+ * @fn      uart_init1
+ *
+ * @brief   Another API to initialize the uart module. Before calling this function, corresponding
+ *          IO mux should be configured correctly.
+ *
+ * @param   uart_addr   - which uart will be initialized, UART0 or UART1.
+ *          bandrate    - such as BAUD_RATE_115200.
+ *
+ * @return  None.
+ * 
+ *  example:    
+    uart_param_t param =
+    {
+        .baud_rate = 409600,
+        .uart_idx = 0,
+        .data_bit_num = 8,
+        .pari = 0,
+        .stop_bit = 1,
+    };
+    uart_init1(UART0,param);
+ */
+void uart_init1(uint32_t uart_addr, uart_param_t param);
+
 
 /// @} UART
 #endif /* _DRIVER_UART_H_ */

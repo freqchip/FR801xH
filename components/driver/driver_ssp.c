@@ -55,9 +55,7 @@ struct ssp_cr1
 
 struct ssp_dr
 {
-    u32 data:8;
-
-    u32 unused:24;
+    u32 data;
 };
 
 struct ssp_sr

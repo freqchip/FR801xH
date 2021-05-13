@@ -35,6 +35,7 @@ void con_max_lat_calc_patch(void);
 uint8_t lld_con_llcp_tx_patch(uint8_t, void *);
 uint8_t lld_con_data_tx_patch(uint8_t, void *);
 void vPortSuppressTicksAndSleep_patch( uint32_t xExpectedIdleTime );
+void adv_tx_free_imp(uint16_t buf);
 
 /*
  * keil debug breakpoint will take place FPB entry at the beginning of patch table with increasing
@@ -46,10 +47,11 @@ void vPortSuppressTicksAndSleep_patch( uint32_t xExpectedIdleTime );
 struct patch_element_t patch_elements[] =
 {
     [15] = {
-        .patch_pc = 0x00002b70, // fix bug: from rx_buf_num to tx_buf_num
+        .patch_pc = 0x000029e6,
+        .replace_function = adv_tx_free_imp,
     },
     [14] = {
-        .patch_pc = 0x00002be4, // fix bug: from rx_buf_num to tx_buf_num
+        .patch_pc = 0x00000001,
     },
     /*
      * (con_par->instant_proc.type == INSTANT_PROC_NO_PROC), this judgement will keep slave latency stopped once
@@ -152,8 +154,8 @@ __attribute__((aligned(64))) uint32_t patch_map[16] =
     0xBF00DF0b,
     0xBF00DF0c, // 0xe002d87f, // 12
     0xDF0CBF00,
-    0x22087933,
-    0x4B2A0051,
+    0xBF00DF0E,
+    0xBF00DF0F,
 };
 
 static uint32_t lld_regs_buffer[6];
@@ -166,7 +168,7 @@ __attribute__((section("ram_code"))) void patch_init(void)
     uint8_t i;
 
     FPB_SetRemap((uint32_t)&patch_map[0]);
-    patch_map[8] = 0xEB012000 | __jump_table.max_rx_buffer_size;
+    //patch_map[8] = 0xEB012000 | __jump_table.max_rx_buffer_size;
 
     for(i=patch_num; i!=0; )
     {
@@ -185,6 +187,22 @@ __attribute__((section("ram_code"))) void patch_init(void)
 #ifdef FLASH_PROTECT
     *(volatile uint32_t *)0x500B0000|= (1<<14);
 #endif
+}
+//struct patch_element_t patch_elements_tmp[2];
+//uint32_t patch_map_tmp[2];
+__attribute__((section("ram_code"))) void patch_set_entry(void)
+{
+    patch_elements[9].patch_pc = 0x00002b70; 
+    patch_elements[8].patch_pc = 0x00002be4;
+    patch_map[9] = 0x4B2A0051;
+    patch_map[8] = 0x22087933;    
+}
+__attribute__((section("ram_code"))) void patch_reset_entry(void)
+{
+    patch_elements[9].patch_pc = 0x00012f30; 
+    patch_elements[8].patch_pc = 0x00012410;
+    patch_map[9] = 0xBF00BF00;
+    patch_map[8] = 0xEB012000 | __jump_table.max_rx_buffer_size;
 }
 
 extern uint32_t record_lr;
@@ -292,7 +310,7 @@ __attribute__((section("ram_code"))) void low_power_restore_entry_imp(uint8_t ty
             ool_write(PMU_REG_RST_CTRL, ool_read(PMU_REG_RST_CTRL) &(~PMU_RST_KEYSCAN));
             ool_write(PMU_REG_RST_CTRL, ool_read(PMU_REG_RST_CTRL) | PMU_RST_KEYSCAN);
         }
-
+        patch_reset_entry();
         patch_init();
     }
 }

@@ -21,6 +21,8 @@
 
 #define PMU_REG_OSC_DRV_CTRL        0x11
 
+#define PMU_REG_OSC32_CTRL_0        0x12
+
 #define PMU_REG_OSC32K_OTD_CTRL     0x14
 
 #define PMU_REG_OTD_PKVDDH_CTRL     0x15

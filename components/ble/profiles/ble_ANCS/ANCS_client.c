@@ -63,6 +63,15 @@ const gatt_uuid_t ANCS_att_tb[] =
     [ANCS_ATT_IDX_NTF_SRC] = { UUID_SIZE_16, NTF_SRC_UUID},
     [ANCS_ATT_IDX_DATA_SRC] = { UUID_SIZE_16, DATA_SRC_UUID},
 };
+static uint16_t ANCS_hdl_cache[3] = {0};
+uint32_t call_notification_uid ;
+uint32_t social_notification_uid ;
+
+
+#define EVENT_ID_NOTIFICATION_ADD       (0)      /**< The arrival of a new iOS notification on the NP */
+#define EVENT_ID_NOTIFICATION_MODIFIED  (1) /**< The modification of an iOS notification on the NP */
+#define EVENT_ID_NOTIFICATION_REMOVED   (2)  /**< The removal of an iOS notification on the NP */
+#define EVENT_ID_NOTIFICATION_RESERVED  (0xff)
 
 #define EVT_FLAG_SILENT         BIT(0)
 #define EVT_FLAG_IMPORTANT      BIT(1)
@@ -71,7 +80,7 @@ const gatt_uuid_t ANCS_att_tb[] =
 #define EVT_FLAG_NEGATIVE       BIT(4)
 
 #define CATGRY_ID_OTHER         (0)
-#define CATGRY_ID_CALL          (1)
+#define CATGRY_ID_INCOMING_CALL (1)
 #define CATGRY_ID_MISS_CALL     (2)
 #define CATGRY_ID_VOICE_MAIL    (3)
 #define CATGRY_ID_SOCIAL        (4)
@@ -103,38 +112,70 @@ struct ancs_ntf_src
 
 void ANCS_recv_ntf_src(uint8_t conidx,uint8_t *p_data, uint16_t len)
 {
+    if(len != 8)
+        goto _exit;
     struct ancs_ntf_src *ntf_src = (struct ancs_ntf_src *)p_data;
     co_printf("event_id:%d,event_flags:%x,category_id:%d,category_cnt:%d,ntf_uid:%x\r\n",ntf_src->event_id
-           ,ntf_src->event_flags,ntf_src->category_id,ntf_src->category_cnt,ntf_src->ntf_uid);
-
-    if( ( ntf_src->event_flags == EVT_FLAG_NEGATIVE && ntf_src->category_id == CATGRY_ID_SOCIAL)
-        || (ntf_src->event_flags == (EVT_FLAG_NEGATIVE|EVT_FLAG_POSITIVE|EVT_FLAG_IMPORTANT) && ntf_src->category_id == CATGRY_ID_CALL)
-      )
+              ,ntf_src->event_flags,ntf_src->category_id,ntf_src->category_cnt,ntf_src->ntf_uid);
+    if( (ntf_src->category_id == CATGRY_ID_SOCIAL
+         || ntf_src->category_id == CATGRY_ID_OTHER
+         || ntf_src->category_id == CATGRY_ID_INCOMING_CALL
+         || ntf_src->category_id == CATGRY_ID_EMAIL) &&
+        ((ntf_src->event_flags & EVT_FLAG_PRE_EXSITING) != 0x04))
     {
-    //co_printf("Send RSP\r\n");
-        uint8_t rsp[12];
-        uint8_t i = 0;
-        rsp[i++] = 0;
-        *(uint32_t *)(rsp + i) = ntf_src->ntf_uid;
-        i+=4;
-        rsp[i++] = NTF_ATT_ID_APPLE;
-        rsp[i++] = NTF_ATT_ID_TITLE;
-        *(uint16_t *)(rsp + i) = 32;
-        i+=2;
-        rsp[i++] = NTF_ATT_ID_MSG;
-        *(uint16_t *)(rsp + i) = MIN( (gatt_get_mtu(conidx) - 32 - 3), 185);
-        
-        co_printf("Send RSP:%d\r\n",MIN( (gatt_get_mtu(conidx) - 32 - 3), 185) );
+        if(ntf_src->category_id == CATGRY_ID_INCOMING_CALL)
+            call_notification_uid = ntf_src->ntf_uid;
+        if(ntf_src->category_id == CATGRY_ID_SOCIAL)
+            social_notification_uid = ntf_src->ntf_uid;
+        if(ntf_src->category_id == CATGRY_ID_MISS_CALL)
+            co_printf("Miss call !\r\n");
 
-        ANCS_gatt_write_req(conidx,ANCS_ATT_IDX_CTL_POINT,rsp,sizeof(rsp));
+        if(ntf_src->event_id != EVENT_ID_NOTIFICATION_REMOVED)
+        {
+            co_printf("Send RSP\r\n");
+            uint16_t max_att_len = gatt_get_mtu(conidx)-3;
+            uint8_t rsp[19];
+            uint8_t i = 0;
+            rsp[i++] = ANCS_CMD_ID_GET_NOTIFICATION_ATTR;   //cmd id
+            *(uint32_t *)(rsp + i) = ntf_src->ntf_uid;  //ntf_uid
+            i+=4;
+
+            rsp[i++] = NTF_ATT_ID_APPLE;
+            rsp[i++] = NTF_ATT_ID_TITLE;
+            rsp[i++] = (max_att_len & 0xff);
+            rsp[i++] = (max_att_len & 0xff00)>>8;
+
+            rsp[i++] = NTF_ATT_ID_SUBTITLE;
+            rsp[i++] = (max_att_len & 0xff);
+            rsp[i++] = (max_att_len & 0xff00)>>8;
+
+            rsp[i++] = NTF_ATT_ID_MSG;
+            rsp[i++] = (max_att_len & 0xff);
+            rsp[i++] = (max_att_len & 0xff00)>>8;
+
+            rsp[i++] = NTF_ATT_ID_MSG_SIZE;
+            rsp[i++] = NTF_ATT_ID_DATE;
+            rsp[i++] = NTF_ATT_ID_POSITIVE_ACT;
+            rsp[i++] = NTF_ATT_ID_NEGATIVE_ACT;
+
+            ANCS_gatt_write_req(conidx,ANCS_ATT_IDX_CTL_POINT,rsp,sizeof(rsp));
+        }
     }
+_exit:
+    ;
 }
-
+enum ntf_msg_type_t
+{
+    WEIXIN,
+    MOBILE_SMS,
+    MOBILE_PHONE,
+    QQ,
+};
 void ANCS_recv_data_src(uint8_t conidx,uint8_t *p_data, uint16_t len)
 {
     uint8_t *str = NULL;
     uint16_t str_len = 0;
-    uint8_t msg_type = 0;
+    enum ntf_msg_type_t msg_type = 0;
     uint16_t i = 0;
     uint16_t data_len = 0;
 
@@ -149,49 +190,75 @@ void ANCS_recv_data_src(uint8_t conidx,uint8_t *p_data, uint16_t len)
             case NTF_ATT_ID_APPLE:
                 data_len = *(uint16_t *)(p_data + i);
                 i+=2;
-                //show_reg(param->value + i,data_len,1);
-                if( memcmp(p_data+i+data_len-3,"xin",3)==0 )
-                    msg_type = 3;
-                else if( memcmp(p_data+i+data_len-5,"phone",5)==0 )
-                    msg_type = 0;
-                else if( memcmp(p_data+i+data_len-3,"mqq",3)==0 )
-                    msg_type = 2;
+                //show_reg(p_data + i,data_len,1);
+                if( memcmp(p_data+i,"com.tencent.xin",strlen("com.tencent.xin"))==0 )
+                    msg_type = WEIXIN;
+                else if( memcmp(p_data+i,"com.apple.MobileSMS",strlen("com.apple.MobileSMS"))==0 )
+                    msg_type = MOBILE_SMS;
+                else if( memcmp(p_data+i,"com.apple.mobilephone",strlen("com.apple.mobilephone"))==0 )
+                    msg_type = MOBILE_PHONE;
+                else if( memcmp(p_data+i,"com.tencent.mqq",strlen("com.tencent.mqq"))==0 )
+                    msg_type = QQ;
+                else if( memcmp(p_data+i,"com.tencent.qq",strlen("com.tencent.qq"))==0 )
+                    msg_type = QQ;
+                co_printf("NTF_ATT_ID_APPLE,msg_type:%d,len:%d\r\n",msg_type,data_len);
                 i+=data_len;
                 break;
-            case NTF_ATT_ID_TITLE:
+            case NTF_ATT_ID_TITLE:  //UTF-8
                 data_len = *(uint16_t *)(p_data + i);
+                co_printf("NTF_ATT_ID_TITLE,len:%d\r\n",data_len);
                 i+=2;
-                //show_reg(param->value + i,data_len,1);
+                show_utf8_hex(p_data + i,data_len,1);
 
-                ////get str
-                str = (uint8_t *)(p_data + i);
-                if(msg_type != 0 && msg_type != 2)
-                    str_len += data_len;
-                else    //get phone num str
-                {
-                    for(uint8_t j=0; j<data_len; j++)
-                    {
-                        if(p_data[i+j] >= '0' && p_data[i+j] <= '9')
-                        {
-                            *(str+str_len) =  p_data[i+j];
-                            str_len++;
-                        }
-                    }
-                }
-                ////get str
+                //str = (uint8_t *)(p_data + i);
+                //str_len += data_len;
+
                 i+=data_len;
                 break;
-            case NTF_ATT_ID_MSG:
+            case NTF_ATT_ID_SUBTITLE:   //UTF-8
                 data_len = *(uint16_t *)(p_data + i);
+                co_printf("NTF_ATT_ID_SUBTITLE,len:%d\r\n",data_len);
                 i+=2;
-                //show_reg(param->value + i,data_len,1);
+                show_utf8_hex(p_data + i,data_len,1);
+                i+=data_len;
+                break;
+            case NTF_ATT_ID_MSG:    //UTF-8
+                data_len = *(uint16_t *)(p_data + i);
+                co_printf("NTF_ATT_ID_MSG,len:%d\r\n",data_len);
+                i+=2;
+                show_utf8_hex(p_data + i,data_len,1);
 
-                if(msg_type != 0)
-                {
-                    memcpy(str+str_len,p_data + i,data_len);
-                    str_len += data_len;
-                }
+                //str = (uint8_t *)(p_data + i);
+                //str_len += data_len;
 
+                i+=data_len;
+                break;
+            case NTF_ATT_ID_MSG_SIZE:   //ASCII
+                data_len = *(uint16_t *)(p_data + i);
+                co_printf("NTF_ATT_ID_MSG_SIZE,len:%d\r\n",data_len);
+                i+=2;
+                show_reg(p_data + i,data_len,1);
+                i+=data_len;
+                break;
+            case NTF_ATT_ID_DATE:       //ASCII
+                data_len = *(uint16_t *)(p_data + i);
+                co_printf("NTF_ATT_ID_DATE,len:%d\r\n",data_len);
+                i+=2;
+                show_reg(p_data + i,data_len,1);
+                i+=data_len;
+                break;
+            case NTF_ATT_ID_POSITIVE_ACT:       //UTF-8
+                data_len = *(uint16_t *)(p_data + i);
+                co_printf("NTF_ATT_ID_POSITIVE_ACT,len:%d\r\n",data_len);
+                i+=2;
+                show_utf8_hex(p_data + i,data_len,1);
+                i+=data_len;
+                break;
+            case NTF_ATT_ID_NEGATIVE_ACT:       //UTF-8
+                data_len = *(uint16_t *)(p_data + i);
+                co_printf("NTF_ATT_ID_NEGATIVE_ACT,len:%d\r\n",data_len);
+                i+=2;
+                show_utf8_hex(p_data + i,data_len,1);
                 i+=data_len;
                 break;
             default:
@@ -252,16 +319,15 @@ uint16_t ANCS_gatt_msg_handler(gatt_msg_t *p_msg)
             co_printf("op:%d done\r\n",p_msg->param.op.operation);
             if(p_msg->param.op.operation == GATT_OP_PEER_SVC_REGISTERED)
             {
-                uint16_t att_handles[3];
-                memcpy(att_handles,p_msg->param.op.arg,6);
-                show_reg((uint8_t *)att_handles,6,1);
+                memcpy(ANCS_hdl_cache,p_msg->param.op.arg,6);
+                show_reg((uint8_t *)ANCS_hdl_cache,6,1);
 
                 gatt_client_enable_ntf_t ntf_enable;
                 ntf_enable.conidx = p_msg->conn_idx;
                 ntf_enable.client_id = ANCS_client_id;
                 ntf_enable.att_idx = ANCS_ATT_IDX_NTF_SRC;
                 gatt_client_enable_ntf(ntf_enable);
-                
+
                 ntf_enable.att_idx = ANCS_ATT_IDX_DATA_SRC;
                 gatt_client_enable_ntf(ntf_enable);
             }
@@ -316,6 +382,22 @@ void ANCS_gatt_read(uint8_t conidx,enum ancs_att_idx att_idx)
     read.att_idx = att_idx;
     gatt_client_read(read);
 }
+
+void ANCS_perform_ntf_act(uint8_t conidx, uint32_t notification_uid, enum ancs_act_id action_id)
+{
+    if(ANCS_hdl_cache[ANCS_ATT_IDX_CTL_POINT])
+    {
+        uint8_t rsp[12];
+        uint8_t i = 0;
+        rsp[i++] = ANCS_CMD_ID_PERFORM_NOTIFICATION_ACTION;   //cmd id
+        *(uint32_t *)(rsp + i) = notification_uid;  //ntf_uid
+        i+=4;
+        rsp[i++] = action_id;
+
+        ANCS_gatt_write_req(conidx,ANCS_ATT_IDX_CTL_POINT,rsp,i);
+    }
+}
+
 
 /*********************************************************************
  * @fn      batt_gatt_add_service

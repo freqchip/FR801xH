@@ -124,7 +124,7 @@ typedef struct
 
 
 /**
-* GATT message events type define 
+* GATT message events type define
 */
 typedef enum
 {
@@ -176,7 +176,7 @@ typedef struct
 typedef struct
 {
     uint16_t    msg_len;        //!< GATT message length
-    uint8_t     *p_msg_data;    //!< GATT message data pointer
+    uint8_t        *p_msg_data;    //!< GATT message data pointer
 } gatt_msg_hdl_t;
 
 /**
@@ -227,6 +227,7 @@ typedef struct
 {
     const gatt_uuid_t       *p_att_tb;          //!< Service UUID
     uint8_t                 att_nb;             //!< Service's attributes number. 
+    uint8_t                 att_tb_initialized; //!< Service's attributes is initialized by gatt_add_client(). 
     gatt_msg_handler_t      gatt_msg_handler;   //!< Read request callback function. 
 } gatt_client_t;
 
@@ -448,7 +449,8 @@ void gatt_client_write_req(gatt_client_write_t write_att);
  * @return  None.
  */
 void gatt_client_write_cmd(gatt_client_write_t write_att);
-
+//void gatt_client_handle_write_cmd(gatt_client_write_t write_att,uint16_t handle);
+void gatt_client_write_cmd_with_handle(gatt_client_write_t write_att,uint16_t handle);
 /*********************************************************************
  * @fn      gatt_client_enable_ntf
  *
@@ -561,5 +563,6 @@ void gatt_msg_default(os_event_t *msg);
  * @return  task number which is corresponding to the profile
  */
 uint16_t gatt_get_task_no_from_prf_id(uint8_t prf_idx);
-
+typedef void (*gatt_rx_with_handle)(uint8_t conidx,uint16_t handle,uint8_t *rec_data,uint16_t len);
+extern gatt_rx_with_handle gatt_recv_with_handle ;
 #endif // end of #ifndef GATT_API_H

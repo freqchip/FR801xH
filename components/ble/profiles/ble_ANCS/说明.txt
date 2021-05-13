@@ -11,6 +11,15 @@ gap_security_req(event->param.slave_connect.conidx); 进行加密请求。
 gatt_discovery_peer_svc(ANCS_client_id,event->param.slave_connect.conidx,16,ANCS_SVC_UUID);
 
 4 ANCS_Client.c 内部接收消息的地方在这个函数
-void ANCS_recv_data_src(uint8_t conidx,uint8_t *p_data, uint16_t len)
+void ANCS_recv_ntf_src(uint8_t conidx,uint8_t *p_data, uint16_t len);
+void ANCS_recv_data_src(uint8_t conidx,uint8_t *p_data, uint16_t len);
+第1个函数显示ios要推送的消息的类型，消息uid，设备回复要接收消息的各种属性id。
+第2个函数显示ios根据设备回复的属性id，接收到的消息细节。默认一共是8个属性id。
 
-5 ANCS_recv_data_src函数内，示例代码显示了微信，电话号码，和移动qq的消息类型。其他消息内型，用户可以打印所有消息字符后，判断消息内容。
+5 ANCS_recv_data_src函数内，显示消息细节，各种类型消息，格式有utf-8 和ascii，参见注释。
+
+6 每次的消息会传NTF_ATT_ID_POSITIVE_ACT 和 NTF_ATT_ID_NEGATIVE_ACT，表示执行消极或积极的动作的结果。
+执行 函数 ANCS_perform_ntf_act对当前消息进行消极或积极的动作。
+例如 
+ANCS_perform_ntf_act(0,call_notification_uid,ANCS_ACT_ID_POSITIVE); 可以接听电话。
+ANCS_perform_ntf_act(0,call_notification_uid,ANCS_ACT_ID_NEGATIVE); 可以挂断电话。

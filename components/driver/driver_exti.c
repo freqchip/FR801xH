@@ -18,6 +18,7 @@
 
 
 volatile struct ext_int_t *const ext_int_reg = (struct ext_int_t *)EXTI_BASE;
+volatile uint32_t ext_int_type = 0;
 
 void ext_int_set_port_mux(enum exti_channel_t exti_channel,enum exti_mux_t exti_io)
 {
@@ -48,15 +49,12 @@ void ext_int_clear(uint32_t bit)
 void ext_int_set_type(enum exti_channel_t exti_channel, enum ext_int_type_t type)
 {
     uint8_t offset, index;
-    uint32_t value;
 
-    index = exti_channel / 16;
-    offset = (exti_channel % 16) << 1;
-
-    value = ext_int_reg->ext_int_type[index];
-    value &= (~(EXT_INT_TYPE_MSK<<offset));
-    value |= (type << offset);
-    ext_int_reg->ext_int_type[index] = value;
+    index = (exti_channel / 16);
+    offset = (exti_channel % 16)<<1;
+    ext_int_type &= (~(EXT_INT_TYPE_MSK<<offset));
+    ext_int_type |= (type << offset);
+    ext_int_reg->ext_int_type[index] = ext_int_type;
 }
 
 void ext_int_set_control(enum exti_channel_t exti_channel, uint32_t clk, uint8_t counter)

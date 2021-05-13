@@ -56,6 +56,8 @@ void demo_LCD_APP(void);
 void lcd_show_logo(const uint8_t*  mode_str);
 void LCD_DisPIC(uint8_t pic_idx);
 void LCD_Clear_quick(uint16_t Color);
+void lcd_show_mul_con(void);
+void multicon_LCD_APP(void);
 __attribute__((section("ram_code"))) void tft_write_pic_data_to_flash(void);
 
 

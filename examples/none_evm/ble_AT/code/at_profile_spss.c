@@ -75,7 +75,12 @@ uint16_t spss_svc_msg_handler(gatt_msg_t *p_msg)
     switch(p_msg->msg_evt)
     {
         case GATTC_MSG_READ_REQ:
-            if(p_msg->att_idx == 3)
+            if(p_msg->att_idx == 2)
+            {
+                memcpy(p_msg->param.msg.p_msg_data, "ntf_uuid", strlen("ntf_uuid"));
+                return strlen("ntf_uuid");
+            }
+            else if(p_msg->att_idx == 3)
             {
                 memcpy(p_msg->param.msg.p_msg_data, &ntf_enable_flag[p_msg->conn_idx], 2);
                 return 2;

@@ -134,9 +134,10 @@ uint16_t hid_client_msg_handler(gatt_msg_t *p_msg)
             }
             else if(p_msg->param.op.operation == GATT_OP_PEER_SVC_REGISTERED)
             {
-                uint16_t att_handles[HID_CLT_ATT_NB];
-                memcpy(att_handles,p_msg->param.op.arg,HID_CLT_ATT_NB*2);
-                show_reg((uint8_t *)att_handles,HID_CLT_ATT_NB*2,1);
+                //uint16_t att_handles[HID_CLT_ATT_NB];
+                memcpy(hid_client_handles,p_msg->param.op.arg,HID_CLT_ATT_NB*2);
+                show_reg((uint8_t *)hid_client_handles,HID_CLT_ATT_NB*2,1);
+
                 hid_client_read(p_msg->conn_idx,HID_CLT_INFO_IDX);
                 hid_client_read(p_msg->conn_idx,HID_CLT_REPORT_MAP_IDX);
                 for(uint8_t report_idx = 0; report_idx<(HID_CLT_NUM_REPORTS*3); report_idx+=3)
@@ -146,11 +147,22 @@ uint16_t hid_client_msg_handler(gatt_msg_t *p_msg)
                 {
                     if(hid_client_props[att_idx] & GATT_PROP_NOTI && hid_client_handles[att_idx] != 0)
                     {
+#if 0
                         gatt_client_enable_ntf_t ntf_enable;
                         ntf_enable.conidx = p_msg->conn_idx;
                         ntf_enable.client_id = hid_client_id;
                         ntf_enable.att_idx = att_idx;
                         gatt_client_enable_ntf(ntf_enable);
+#else      //another way
+                        gatt_client_write_t write_att;
+                        uint8_t value[2] = {0x01,0x00};
+                        write_att.client_id = hid_client_id;
+                        write_att.conidx = p_msg->conn_idx;
+                        write_att.data_len = 2;
+                        write_att.p_data = value;
+                        write_att.att_idx = 0;
+                        gatt_client_write_req_with_handle(write_att,hid_client_handles[att_idx]+1);
+#endif
                     }
                 }
                 for(uint8_t report_idx = 0; report_idx<(HID_CLT_NUM_REPORTS*3); report_idx+=3)      //enable report idx att ntf
@@ -158,7 +170,15 @@ uint16_t hid_client_msg_handler(gatt_msg_t *p_msg)
                     if(hid_client_props[report_idx + HID_CLT_FEATURE_IDX] & GATT_PROP_NOTI
                        && hid_client_handles[report_idx + HID_CLT_FEATURE_IDX] != 0)
                     {
-                        hid_client_write_cmd(p_msg->conn_idx,report_idx + HID_CLT_FEATURE_CCCD_IDX,"\x01\x00",2);
+                        //hid_client_write_cmd(p_msg->conn_idx,report_idx + HID_CLT_FEATURE_CCCD_IDX,"\x01\x00",2);
+                        gatt_client_write_t write_att;
+                        uint8_t value[2] = {0x01,0x00};
+                        write_att.client_id = hid_client_id;
+                        write_att.conidx = p_msg->conn_idx;
+                        write_att.data_len = 2;
+                        write_att.p_data = value;
+                        write_att.att_idx = 0;
+                        gatt_client_write_req_with_handle(write_att,hid_client_handles[report_idx + HID_CLT_FEATURE_IDX]+2);
                     }
                 }
             }
@@ -178,8 +198,8 @@ void hid_client_read(uint8_t conidx,uint8_t att_idx)
         gatt_client_read_t read;
         read.conidx = conidx;
         read.client_id = hid_client_id;
-        read.att_idx = att_idx;
-        gatt_client_read(read);
+        read.att_idx = 0;
+        gatt_client_read_with_handle(read,hid_client_handles[att_idx]);
     }
 }
 void hid_client_write_cmd(uint8_t conidx, uint8_t att_idx, uint8_t *p_data, uint16_t len)
@@ -189,10 +209,10 @@ void hid_client_write_cmd(uint8_t conidx, uint8_t att_idx, uint8_t *p_data, uint
         gatt_client_write_t wrt;
         wrt.conidx = conidx;
         wrt.client_id = hid_client_id;
-        wrt.att_idx = att_idx ;
+        wrt.att_idx = 0 ;
         wrt.data_len = len;
         wrt.p_data = p_data;
-        gatt_client_write_cmd(wrt);
+        gatt_client_write_cmd_with_handle(wrt,hid_client_handles[att_idx]);
     }
 }
 void hid_client_write_req(uint8_t conidx, uint8_t att_idx, uint8_t *p_data, uint16_t len)
@@ -202,10 +222,10 @@ void hid_client_write_req(uint8_t conidx, uint8_t att_idx, uint8_t *p_data, uint
         gatt_client_write_t wrt;
         wrt.conidx = conidx;
         wrt.client_id = hid_client_id;
-        wrt.att_idx = att_idx ;
+        wrt.att_idx = 0 ;
         wrt.data_len = len;
         wrt.p_data = p_data;
-        gatt_client_write_req(wrt);
+        gatt_client_write_req_with_handle(wrt,hid_client_handles[att_idx]);
     }
 }
 extern uint8_t client_idx;

@@ -319,6 +319,7 @@ void adc_tim_fn(void *arg)
     adc_init(&cfg);
     adc_enable(NULL, NULL, 0);
     adc_get_result(ADC_TRANS_SOURCE_PAD, 0x01, &result);
+    adc_disable();
     co_printf("result:%d\r\n",result);
 }
 void demo_adc(void)
@@ -738,7 +739,7 @@ void demo_pmu_exti(void)
 {
     co_printf("pmu exti isr\r\n");
     os_timer_init(&button_anti_shake_timer, button_anti_shake_timeout_handler, NULL);
-    pmu_set_pin_pull(GPIO_PORT_D, BIT(6), true);        //PD6 low voltage ->isr
+    pmu_set_pin_pull(GPIO_PORT_D, BIT(6)|BIT(7), true);        //PD6 low voltage ->isr
     //pmu_set_pin_pull(GPIO_PORT_D, BIT(7), false);     //PD7 high voltage ->isr
     pmu_port_wakeup_func_set(GPIO_PD6|GPIO_PD7);    //PD7 pin should connect to GND with 4.7K resistor
 }

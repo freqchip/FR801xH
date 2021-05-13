@@ -32,6 +32,17 @@ __STATIC __INLINE void show_reg(uint8_t *data,uint32_t len,uint8_t dbg_on)
     co_printf("\r\n");
 }
 
+__STATIC __INLINE void show_utf8_hex(uint8_t *data,uint32_t len,uint8_t dbg_on)
+{
+    uint32_t i=0;
+    if(len == 0 || (dbg_on==0)) return;
+    for(; i<len; i++)
+    {
+        co_printf("%02X",data[i]);
+    }
+    co_printf("\r\n");
+}
+
 void co_delay_100us(uint32_t num);
 
 /*

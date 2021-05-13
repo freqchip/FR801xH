@@ -15,6 +15,9 @@
 
 #include "sbc.h"
 #include "adpcm.h"
+#ifdef ADPCM_IMA_FANGTANG
+#include "adpcm_ima_fangtang.h"
+#endif
 #include "co_list.h"
 #include "co_printf.h"
 #include "os_task.h"
@@ -59,9 +62,10 @@ struct encoder_env_t
 };
 
 static enum encode_type encoder_type = ENCODE_TYPE_ADPCM;        // 0 = ADPCM; 1= SBC;
-
-
-struct CodecState adpcm_state;
+#ifdef ADPCM_IMA_FANGTANG
+adpcm_state adpcm_ima_fangtang_state;
+#endif
+struct CodecState adpcm_state_;
 struct encoder_env_t encoder_env;
 static enum encoder_state_t encode_task_status = ENCODER_STATE_IDLE;
 void audio_encode_start(encode_param_t param)
@@ -102,13 +106,15 @@ void audio_encode_start(encode_param_t param)
     if(encoder_type == ENCODE_TYPE_ADPCM)
     {
         encoder_env.frame_size = encoder_env.block_size>>2;     //adpcm, fixed compressing rate == 4; frame_len = 64
-        memset(&adpcm_state,0x0,sizeof(adpcm_state));
+        memset(&adpcm_state_,0x0,sizeof(adpcm_state_));
+#ifdef ADPCM_IMA_FANGTANG
+		memset(&adpcm_ima_fangtang_state,0x0,sizeof(adpcm_ima_fangtang_state));
+#endif
     }
     else
         encoder_env.frame_size = sbc_get_frame_length(encoder_env.sbc);     //0x3A = 58
 
-    //co_printf("blk_sz:%d,frm_sz:%d\r\n",encoder_env.block_size,encoder_env.frame_size);
-
+    co_printf("blk_sz:%d,frm_sz:%d\r\n",encoder_env.block_size,encoder_env.frame_size);
 
     co_list_init(&encoder_env.pcm_data_list);
     encoder_env.out_buffer = os_malloc(ENCODER_MAX_BUFFERING_BLOCK_COUNT*encoder_env.frame_size);       //0x244 = 580, <1block enc to 1frame>
@@ -128,7 +134,10 @@ void audio_encode_stop(void)
         return;
 
     GLOBAL_INT_DISABLE();
-    memset(&adpcm_state,0x0,sizeof(adpcm_state));
+    memset(&adpcm_state_,0x0,sizeof(adpcm_state_));
+#ifdef ADPCM_IMA_FANGTANG
+    memset(&adpcm_ima_fangtang_state,0x0,sizeof(adpcm_ima_fangtang_state));
+#endif
     if(encoder_env.tmp_pcm)
     {
         os_msg_free(encoder_env.tmp_pcm);
@@ -186,11 +195,19 @@ static int audio_encoder_next_frame_handler(struct pcm_data_t *pcm_data)
     {
         if(encoder_type == ENCODE_TYPE_ADPCM)
         {
-            encode( &adpcm_state
+
+#ifdef ADPCM_IMA_FANGTANG
+            adpcm_coder((short *)(pcm_data->data)
+                        , &encoder_env.out_buffer[encoder_env.encode_write_pos]
+                        , encoder_env.block_size>>1
+                        , &adpcm_ima_fangtang_state);
+#else
+            encode( &adpcm_state_
                     ,(short *)(pcm_data->data)
                     ,encoder_env.block_size>>1
                     ,&encoder_env.out_buffer[encoder_env.encode_write_pos]
                   );
+#endif
         }
         else
         {

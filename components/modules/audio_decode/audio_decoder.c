@@ -128,7 +128,7 @@ void audio_decoder_start_realtime(uint8_t *data,uint16_t length)
                                   FALSE);
         decoder_env.store_type = DECODER_STORE_TYPE_BLE;
         decoder_env.frame_len = audio_decoder_calc_sbc_frame_len((struct sbc_header_t *)data);
-        co_printf("preparing,fram_len:%d\r\n",decoder_env.frame_len);
+        co_printf("preparing,fram_len:%d,heap:%d\r\n",decoder_env.frame_len,os_get_free_heap_size());
         co_list_init(&decoder_env.pcm_buffer_list);
         co_list_init(&decoder_env.sbc_buffer_list);
         decoder_env.pcm_buffer_counter = 0;

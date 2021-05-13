@@ -20,6 +20,8 @@
 #include "driver_gpio.h"
 #include "driver_iomux.h"
 #include "driver_pmu.h"
+
+
 #define DEV_V_1_4  (1)  //FR8016H DEV1.4
 /*
  * MACROS
@@ -55,7 +57,7 @@ enum
 uint16_t BACK_COLOR;   //±³¾°É«
 uint8_t dc_value = DC_CMD;   //cmd
 uint8_t picture_idx = 0;//Í¼Æ¬Ë¢ÐÂÐòºÅ
-
+extern uint8_t led_state;
 /*
  * LOCAL VARIABLES 
  */
@@ -866,6 +868,59 @@ void lcd_show_logo(const uint8_t*  mode_str)
 *			
 * @return	None.
 */
+
+#ifdef MULTILINK
+#include "ble_multi_con.h"
+void multicon_LCD_APP(void)
+{
+    
+    Lcd_Init();
+	if(dev_info.node_role == DEV_ROL_SLAVE){
+        BACK_COLOR=RED;
+        LCD_Clear_quick(BACK_COLOR);
+    }else{
+        BACK_COLOR=BLUE;
+        LCD_Clear_quick(BACK_COLOR);
+    }  
+    
+
+    //lcd_show_mul_con();    
+}
+
+void lcd_show_mul_con(void)
+{
+	uint8_t LCD_ShowStringBuff[30] = {0};
+	//co_printf("lcd_show_mul_con\r\n");
+    if(led_state){
+        sprintf((char *)LCD_ShowStringBuff,"led:%d  ",led_state);
+	    LCD_ShowString(5,15,LCD_ShowStringBuff,YELLOW);
+        LCD_Fill(80,15,180,34,YELLOW);
+    }else{
+        sprintf((char *)LCD_ShowStringBuff,"led:%d  ",led_state);
+	    LCD_ShowString(5,15,LCD_ShowStringBuff,BLACK);
+        LCD_Fill(80,15,180,34,BLACK);
+    }
+
+    sprintf((char *)LCD_ShowStringBuff,"Node_id:%d  ",dev_info.node_id);
+	LCD_ShowString(5,35,LCD_ShowStringBuff,YELLOW);
+    uint32_t slave_id = dev_info.dev_node_info.node_info.slave_id;
+    sprintf((char *)LCD_ShowStringBuff,"layer:%d    layer_ID:%x%x%x%x%x ",dev_info.dev_node_info.node_info.layer,(slave_id>>(4*4))&0xf,(slave_id>>(3*4))&0xf,(slave_id>>(2*4))&0xf,(slave_id>>(1*4))&0xf,(slave_id)&0xf);
+	LCD_ShowString(5,55,LCD_ShowStringBuff,YELLOW);
+    sprintf((char *)LCD_ShowStringBuff,"M1:%d M2:%d    slave_num:%d ",dev_info.dev_node_info.node_info.Master1_state ,dev_info.dev_node_info.node_info.Master2_state,dev_info.dev_node_info.node_info.slave_num);
+	LCD_ShowString(5,75,LCD_ShowStringBuff,YELLOW);
+
+    if(dev_info.dev_node_info.node_info.layer == 0){
+	    LCD_ShowString(5,95,"off_line ",BLACK );
+        LCD_Fill(5,110,40,145,BLACK);
+    }else{
+	    LCD_ShowString(5,95,"on_line  ",YELLOW);
+        LCD_Fill(5,110,40,145,YELLOW);
+    }
+	
+
+}
+#else
+
 void demo_LCD_APP(void)
 {
     
@@ -945,6 +1000,6 @@ void LCD_DisPIC(uint8_t pic_idx)
 	}
   
 }
-
+#endif
 
 

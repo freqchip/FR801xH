@@ -738,6 +738,7 @@ void pmu_set_lp_clk_src(enum pmu_lp_clk_src_t src)
     extern uint8_t pmu_clk_src; // 0: internal RC, 1: external 32768
     if(src == PMU_LP_CLK_SRC_EX_32768)
     {
+        ool_write(PMU_REG_OSC32_CTRL_0, ool_read(PMU_REG_OSC32_CTRL_0) & 0xbf);
         /* disalbe 32768 osc PD */
         ool_write(PMU_REG_OSC32K_OTD_CTRL, ool_read(PMU_REG_OSC32K_OTD_CTRL) & 0xfe);
         /* set clock source to external 32768 */
@@ -751,6 +752,7 @@ void pmu_set_lp_clk_src(enum pmu_lp_clk_src_t src)
         ool_write(PMU_REG_CLK_CONFIG, (ool_read(PMU_REG_CLK_CONFIG) & (~PMU_SYS_CLK_SEL_MSK)) | 0x40);
         /* enable 32768 osc PD */
         ool_write(PMU_REG_OSC32K_OTD_CTRL, ool_read(PMU_REG_OSC32K_OTD_CTRL) | 0x01);
+        ool_write(PMU_REG_OSC32_CTRL_0, ool_read(PMU_REG_OSC32_CTRL_0) | 0x40);
 
         pmu_clk_src = 0;
     }

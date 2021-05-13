@@ -1,6 +1,13 @@
 #ifndef  __AUDIO_ENCODE_H
 #define  __AUDIO_ENCODE_H
 
+
+/*
+NOTE:
+    In your project, to use algorithmn: adpcm_ima_fangtang , please #define ADPCM_IMA_FANGTANG 
+    default algorithmn is: adpcm_intel
+*/
+
 #define ENCODER_MAX_BUFFERING_BLOCK_COUNT       10
 
 enum encode_type

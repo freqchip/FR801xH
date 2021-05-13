@@ -1,0 +1,50 @@
+1 主机连接上后，不使用gatt_discovery_all_peer_svc 或 gatt_discovery_peer_svc扫描服务。 而是调用
+uint16_t handles[3] = {0x10,0x12,0x14};
+gatt_client_direct_register(event->param.master_connect.conidx,0x10,0x14,2, handles);
+直接注册一个服务到协议栈内部，用于从机的接收。
+其中：
+a) 0x10,0x14,分别为所填所有handle号的最小和最大的handle号。
+b) 3表示感兴趣的属性的个数
+c) 表示感兴趣的属性的handle号数组。
+
+2 等注册完毕后，直接使用以下函数操作
+void gatt_client_write_req_with_handle(gatt_client_write_t write_att,uint16_t handle)
+void gatt_client_write_cmd_with_handle(gatt_client_write_t write_att,uint16_t handle)
+void gatt_client_read_with_handle(gatt_client_read_t read_att,uint16_t handle)
+void gatt_notification_with_handle(gatt_ntf_t ntf_att,uint16_t handle)
+void gatt_indication_with_handle(gatt_ind_t ind_att,uint16_t handle)
+使能ntf的示例代码如下：
+    gatt_client_write_t write_att;                        
+    uint8_t value[2] = {0x01,0x00};                        
+    write_att.client_id = client_id;                        
+    write_att.conidx = 0;                        
+    write_att.data_len = 2;                        
+    write_att.p_data = value;                        
+    write_att.att_idx = 0;                        
+    gatt_client_write_req_with_handle(write_att,0x11);
+发送数据的示例代码如下
+    gatt_client_write_t write;
+    write.conidx = 0;
+    write.client_id = client_id;
+    write.att_idx = 0; //RX
+    write.p_data = "\x1\x2\x3\x4\x5\x6\x7";
+    write.data_len = 7;
+    gatt_client_write_cmd_with_handle(write,0x14);
+读数据的示例代码如下
+    gatt_client_read_t read;
+    read.conidx = 0;
+    read.client_id = client_id;
+    read.att_idx = 0; //TX
+    //gatt_client_read(read);
+    gatt_client_read_with_handle(read,0x12);
+
+
+
+
+
+
+
+
+
+
+

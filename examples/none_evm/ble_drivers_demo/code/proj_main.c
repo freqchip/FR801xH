@@ -80,6 +80,7 @@ void user_entry_before_ble_init(void)
 
     ool_write(PMU_REG_ADKEY_ALDO_CTRL, ool_read(PMU_REG_ADKEY_ALDO_CTRL) & (~(1<<3)));
     //ool_write(PMU_REG_ADKEY_ALDO_CTRL, (ool_read(PMU_REG_ADKEY_ALDO_CTRL)&0x0F));
+    //pmu_set_aldo_voltage(PMU_ALDO_MODE_NORMAL,PMU_ALDO_VOL_2_1);
 }
 
 void user_entry_after_ble_init(void)

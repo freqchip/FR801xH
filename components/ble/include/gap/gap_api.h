@@ -25,12 +25,12 @@
 /** @defgroup GAP_ADV_MODE_DEFINES
  * @{
  */
-#define GAP_ADV_MODE_UNDIRECT               0x01
-#define GAP_ADV_MODE_DIRECT                 0x02
-#define GAP_ADV_MODE_NON_CONN_NON_SCAN      0x03
-#define GAP_ADV_MODE_NON_CONN_SCAN          0x04
-#define GAP_ADV_MODE_HDC_DIRECT             0x05
-#define GAP_ADV_MODE_BEACON                 0x06
+#define GAP_ADV_MODE_UNDIRECT               0x01    /// scannalbe & connectable
+#define GAP_ADV_MODE_DIRECT                 0x02    /// non-scannalbe & connectable
+#define GAP_ADV_MODE_NON_CONN_NON_SCAN      0x03    /// non-scannalbe & non-connectable
+#define GAP_ADV_MODE_NON_CONN_SCAN          0x04    /// scannalbe & non-connectable
+#define GAP_ADV_MODE_HDC_DIRECT             0x05    /// non-scannalbe & connectable
+#define GAP_ADV_MODE_BEACON                 0x06    /// scannalbe(no scan rsp) & non-connectable
 
 #define GAP_ADV_MODE_EXTEND_CONN_UNDIRECT   0x11
 #define GAP_ADV_MODE_EXTEND_CONN_DIRECT     0x12
@@ -231,6 +231,7 @@ typedef enum
     GAP_SEC_EVT_BOND_START,         //!< Link bond starts
     GAP_SEC_EVT_BOND_FAIL,          //!< Link bond is failed
     GAP_SEC_EVT_BOND_SUCCESS,       //!< Link bond is successful
+    GAP_SEC_EVT_PIN_CODE_REQ,       //!< Link bond request pin code inpu
 } gap_event_type_t;
 
 #define MAC_ADDR_LEN         6
@@ -434,9 +435,10 @@ typedef struct
         uint8_t                         master_encrypt_conidx;  //!< Connection index of encrypted link, role as master
         gap_evt_master_enc_fail_t       master_encrypt_fail;    //!< encrption fail reason & conidx, role as master
         uint8_t                         slave_encrypt_conidx;   //!< Connection index of encrypted link, role as slave
-        uint8_t                         bond_start_conidx;   //!< Connection index of encrypted link, role as slave
-        uint8_t                         bond_success_conidx;   //!< Connection index of encrypted link, role as slave
-        gap_evt_bond_fail_t             bond_fail;   //!< Connection index of encrypted link, role as slave
+        uint8_t                         bond_start_conidx;      //!< link index, in which link, bond started
+        uint8_t                         bond_success_conidx;    //!< link index, in which link, bond successed 
+        gap_evt_bond_fail_t             bond_fail;              //!< link index, in which link, bond failed 
+        uint8_t                         bond_pin_code_req_conidx; //!< link index, in which link, bond procedure need pin code input
     } param;
 } gap_event_t;
 

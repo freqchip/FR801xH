@@ -36,12 +36,13 @@
                 import rwble_isr_patch
                 import timer0_isr_ram
                 import timer1_isr_ram					
-                import uart0_isr_ram
-                import uart1_isr
+                ;import uart0_isr_ram
+                ;import uart1_isr_ram
                 ;import pmu_isr_ram
                 import i2s_isr_ram
                 import exti_isr_ram					
-                import pdm_isr
+                ;import pdm_isr_ram
+		;import ssp_isr_ram
 
 
 
@@ -79,7 +80,7 @@ __initial_sp    EQU     0x40004000
                 DCD     timer0_isr_ram                ; 1
                 DCD     timer1_isr_ram                ; 2
                 DCD     uart0_isr_ram                 ; 3
-                DCD     uart1_isr                 ; 4
+                DCD     uart1_isr_ram                 ; 4
                 DCD     ssp_isr_ram                   ; 5
                 DCD     0                         ; 6
                 DCD     0                         ; 7
@@ -88,7 +89,7 @@ __initial_sp    EQU     0x40004000
                 DCD     exti_isr_ram              ; 10
                 DCD     pmu_isr_ram               ; 11
                 DCD     adc_isr                   ; 12
-                DCD     pdm_isr				      ; 13
+                DCD     pdm_isr_ram               ; 13
                 DCD     0                         ; 14
                 DCD     0                         ; 15
 
@@ -156,8 +157,14 @@ SVC_Handler_2
 Default_Handler PROC
                 EXPORT  adc_isr           [WEAK]
                 EXPORT  ssp_isr_ram       [WEAK]
+                EXPORT  pdm_isr_ram       [WEAK]
+                EXPORT  uart0_isr_ram     [WEAK]
+                EXPORT  uart1_isr_ram     [WEAK]					
 adc_isr
 ssp_isr_ram
+pdm_isr_ram
+uart0_isr_ram
+uart1_isr_ram
                 B       .
                 ENDP
                 NOP

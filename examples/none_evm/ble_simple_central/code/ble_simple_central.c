@@ -86,11 +86,13 @@ static void button_anti_shake_timeout_handler(void *param)
 		//if current press key is same as recorded key before 10ms anti-shake timer
     if(gpio_value == curr_button_before_anti_shake)	
     {
+				gpio_value &= ~GPIO_PC4;    //ignore PC4, because of inner usage in lib
         //co_printf("press_key:%08X\r\n",gpio_value);
 				mac_addr_t mac_addr1 = {{0x1,0x2,0x3,0x4,0x5,0x6}};
 				mac_addr_t mac_addr2 = {{0x2,0x2,0x3,0x4,0x5,0x6}};
 				if(gpio_value == GPIO_PD6)
-					gap_start_conn(&mac_addr1,0,12, 12, 0, 300);  //connect device with mac addr1
+					//gap_start_conn(&mac_addr1,0,12, 12, 0, 300);  //connect device with mac addr1
+					gap_bond_manager_delete_all();
 				else if(gpio_value == GPIO_PD7)
 					gap_start_conn(&mac_addr2,0,12, 12, 0, 300);	//connect device with mac addr2
     }
@@ -139,7 +141,7 @@ static void app_gap_evt_cb(gap_event_t *p_event)	//GAP callback function, p_evne
  
         case GAP_EVT_ADV_REPORT:	//got adv report
         {
-            uint8_t scan_name[] = "Simple Peripheral";
+            uint8_t scan_name[] = "Simple_Peripheral";
             //if(memcmp(event->param.adv_rpt->src_addr.addr.addr,"\x0C\x0C\x0C\x0C\x0C\x0B",6)==0)
             if (p_event->param.adv_rpt->data[0] == 0x12
                 && p_event->param.adv_rpt->data[1] == GAP_ADVTYPE_LOCAL_NAME_COMPLETE
@@ -288,10 +290,10 @@ static uint16_t simple_central_msg_handler(gatt_msg_t *p_msg)		//GATT event call
         }
         break;
         case GATTC_MSG_SVC_REPORT:
-			{
-				gatt_svc_report_t *svc_rpt = (gatt_svc_report_t *)(p_msg->param.msg.p_msg_data);
-				co_printf("svc:%d,start_hdl:%d,end_hdl:%d\r\n",svc_rpt->uuid_len,svc_rpt->start_hdl,svc_rpt->end_hdl);
-			}
+            {
+                gatt_svc_report_t *svc_rpt = (gatt_svc_report_t *)(p_msg->param.msg.p_msg_data);
+                co_printf("svc:%d,start_hdl:%d,end_hdl:%d\r\n",svc_rpt->uuid_len,svc_rpt->start_hdl,svc_rpt->end_hdl);
+            }
 #if 0
             if(memcmp(svc_rpt->uuid,spss_svc_uuid,16) == 0)
             {
@@ -344,7 +346,10 @@ static uint16_t simple_central_msg_handler(gatt_msg_t *p_msg)		//GATT event call
                 uint16_t att_handles[2];
                 memcpy(att_handles,p_msg->param.op.arg,4);	//copy discoveried handles on peer device
                 show_reg((uint8_t *)att_handles,4,1);	//printf handlers for UUID array idx. if 0 means handler nnumber is not not found
-
+#if 0	
+								handles[0] = att_handles[0];
+								handles[1] = att_handles[1];
+#endif
                 gatt_client_enable_ntf_t ntf_enable;	//below code is to inform peer device that notification is enabled
                 ntf_enable.conidx = p_msg->conn_idx;	//GATT event from which link_id
                 ntf_enable.client_id = client_id;			//profile id assigned by BLE stack when profile is created
@@ -409,19 +414,47 @@ void simple_central_init(void)
 
     gap_set_cb_func(app_gap_evt_cb);
     
-    // Initialize security related settings.
+    //enable bond manage module, which will record bond key and peer service info into flash. 
+		//and read these info from flash when func: "gap_bond_manager_init" executes.
     gap_bond_manager_init(BLE_BONDING_INFO_SAVE_ADDR, BLE_REMOTE_SERVICE_SAVE_ADDR, 8, true);
-
+	
+    mac_addr_t addr;
+    gap_address_get(&addr);
+    co_printf("Local BDADDR: 0x%2X%2X%2X%2X%2X%2X\r\n", addr.addr[0], addr.addr[1], addr.addr[2], addr.addr[3], addr.addr[4], addr.addr[5]);
+    
+#if 0
     gap_security_param_t param =
     {
-        .mitm = false,
-        .ble_secure_conn = false,
-        .io_cap = GAP_IO_CAP_NO_INPUT_NO_OUTPUT,
-        .pair_init_mode = GAP_PAIRING_MODE_WAIT_FOR_REQ,
-        .bond_auth = true,
+        .mitm = true,		// use PIN code during bonding
+        .ble_secure_conn = false,		//not enable security encryption
+        .io_cap = GAP_IO_CAP_KEYBOARD_ONLY,		//ble device has input ability, will input pin code. 
+        .pair_init_mode = GAP_PAIRING_MODE_WAIT_FOR_REQ,	//need bond
+        .bond_auth = true,	//need bond auth
+    };
+#endif
+#if 0
+    gap_security_param_t param =
+    {
+        .mitm = true,		// use PIN code during bonding
+        .ble_secure_conn = false,		//not enable security encryption
+        .io_cap = GAP_IO_CAP_DISPLAY_ONLY,	//ble device has output ability, will show pin code. 
+        .pair_init_mode = GAP_PAIRING_MODE_WAIT_FOR_REQ, //need bond
+        .bond_auth = true,	//need bond auth
+        .password = 123456,	//set PIN code, it is a dec num between 100000 ~ 999999
+    };
+#endif
+#if 1
+    gap_security_param_t param =
+    {
+        .mitm = false,	// dont use PIN code during bonding
+        .ble_secure_conn = false,	//not enable security encryption
+        .io_cap = GAP_IO_CAP_NO_INPUT_NO_OUTPUT, //ble device has neither output nor input ability, 
+        .pair_init_mode = GAP_PAIRING_MODE_WAIT_FOR_REQ,		//need bond
+        .bond_auth = true,	//need bond auth
         .password = 0,
     };
-
+#endif
+		//initialize bonding configurations
     gap_security_param_init(&param);
     
     // Initialize GATT 

@@ -50,10 +50,10 @@ void user_custom_parameters(void)
     __jump_table.addr.addr[2] = 0xD0;
     __jump_table.addr.addr[3] = 0xF0;
     __jump_table.addr.addr[4] = 0x17;
-    __jump_table.addr.addr[5] = 0xc0;
+    __jump_table.addr.addr[5] = 0x20;
     
-    id_data.unique_id[5] |= 0xc0; // random addr->static addr type:the top two bit must be 1.
-    memcpy(__jump_table.addr.addr,id_data.unique_id,6);
+    //id_data.unique_id[5] |= 0xc0; // random addr->static addr type:the top two bit must be 1.
+    //memcpy(__jump_table.addr.addr,id_data.unique_id,6);
     __jump_table.system_clk = SYSTEM_SYS_CLK_48M;
     jump_table_set_static_keys_store_offset(JUMP_TABLE_STATIC_KEY_OFFSET);
     
@@ -149,7 +149,7 @@ void user_entry_before_ble_init(void)
 void user_entry_after_ble_init(void)
 {
     co_printf("BLE Central\r\n");
-    system_sleep_disable();		//as master dont sleep
+		system_sleep_disable();		//as master dont sleep
     // Application layer initialization, can included bond manager init, 
     // advertising parameters init, scanning parameter init, GATT service adding, etc.
     simple_central_init();

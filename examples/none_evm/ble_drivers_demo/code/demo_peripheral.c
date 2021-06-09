@@ -562,6 +562,8 @@ void demo_pmu_qdec(void)
 
 #if RTC_TEST_ENABLE
 #include "driver_rtc.h"
+#include "time_rtc.h"
+
 __attribute__((section("ram_code"))) void rtc_isr_ram(uint8_t rtc_idx)
 {
     if(rtc_idx == RTC_A)
@@ -761,12 +763,19 @@ __attribute__((section("ram_code"))) void exti_isr_ram(void)
     exti_src = ext_int_get_src();
     ext_int_clear(exti_src);
     co_printf("exti_key:%x\r\n",exti_src);
+    if( exti_src & BIT(EXTI_12) )
+    {
+        if(exti_type == EXT_INT_TYPE_LOW)
+            exti_type = EXT_INT_TYPE_HIGH;
+        else if(exti_type == EXT_INT_TYPE_HIGH)
+            exti_type = EXT_INT_TYPE_LOW;
+        ext_int_set_type(EXTI_12, exti_type);
+    }
+    else if( exti_src & BIT(EXTI_13) )
+    {
 
-    if(exti_type == EXT_INT_TYPE_LOW)
-        exti_type = EXT_INT_TYPE_HIGH;
-    else if(exti_type == EXT_INT_TYPE_HIGH)
-        exti_type = EXT_INT_TYPE_LOW;
-    ext_int_set_type(EXTI_12, exti_type);
+
+    }
 }
 
 void demo_digital_exti(void)
@@ -780,6 +789,14 @@ void demo_digital_exti(void)
     ext_int_set_type(EXTI_12, EXT_INT_TYPE_LOW);
     ext_int_set_control(EXTI_12, 1000, 4);
     ext_int_enable(EXTI_12);
+
+    system_set_port_mux(GPIO_PORT_D, GPIO_BIT_5, PORTD5_FUNC_D5);
+    gpio_set_dir(GPIO_PORT_D, GPIO_BIT_5, GPIO_DIR_IN);
+    system_set_port_pull( GPIO_PD5, true);
+    ext_int_set_port_mux(EXTI_13,EXTI_13_PD5);
+    ext_int_set_type(EXTI_13, EXT_INT_TYPE_NEG);
+    ext_int_set_control(EXTI_13, 1000, 4);
+    ext_int_enable(EXTI_13);
 
     exti_type = EXT_INT_TYPE_LOW;
     NVIC_SetPriority(EXTI_IRQn, 4);
@@ -952,6 +969,7 @@ void peripheral_demo(void)
 
 #if RTC_TEST_ENABLE
     demo_rtc();
+    demo_rtc_start_timer();
 #endif
 
 #if (I2C_DEMO_ENABLE)

@@ -34,7 +34,7 @@ const uint8_t sp_svc_uuid[] = UUID16_ARR(SP_SVC_UUID);
 /******************************* Characteristic 1 defination *******************************/
 // Characteristic 1 UUID: 0xFFF1
 // Characteristic 1 data 
-#define SP_CHAR1_VALUE_LEN  10
+#define SP_CHAR1_VALUE_LEN  20
 uint8_t sp_char1_value[SP_CHAR1_VALUE_LEN] = {0};
 // Characteristic 1 User Description
 #define SP_CHAR1_DESC_LEN   17
@@ -91,7 +91,7 @@ const uint8_t sp_char5_desc[SP_CHAR5_DESC_LEN] = "Characteristic 5";
  * GLOBAL VARIABLES (全局变量)
  */
 uint8_t sp_svc_id = 0;
-
+uint8_t ntf_char1_enable = 0;
 
 /*
  * LOCAL VARIABLES (本地变量)
@@ -129,11 +129,20 @@ const gatt_attribute_t simple_profile_att_table[SP_IDX_NB] =
                                                 },
         // Characteristic 1 Value                  
         [SP_IDX_CHAR1_VALUE]                =   {
-                                                    { UUID_SIZE_2, UUID16_ARR(SP_CHAR1_UUID) },                 /* UUID */
-                                                    GATT_PROP_READ | GATT_PROP_WRITE,                           /* Permissions */
+                                                    { UUID_SIZE_16, SP_CHAR1_TX_UUID },                 /* UUID */
+                                                    GATT_PROP_READ | GATT_PROP_NOTI,                           /* Permissions */
                                                     SP_CHAR1_VALUE_LEN,                                         /* Max size of the value */
                                                     NULL,                                                       /* Value of the attribute */    /* Can assign a buffer here, or can be assigned in the application by user */
-                                                },             
+                                                },        
+
+        // Characteristic 4 client characteristic configuration
+        [SP_IDX_CHAR1_CFG]                  =   {
+                                                    { UUID_SIZE_2, UUID16_ARR(GATT_CLIENT_CHAR_CFG_UUID) },     /* UUID */
+                                                    GATT_PROP_READ | GATT_PROP_WRITE,                           /* Permissions */
+                                                    2,                                           /* Max size of the value */
+                                                    NULL,                                                       /* Value of the attribute */    /* Can assign a buffer here, or can be assigned in the application by user */
+                                                }, 
+																								
         // Characteristic 1 User Description
         [SP_IDX_CHAR1_USER_DESCRIPTION]     =   {
                                                     { UUID_SIZE_2, UUID16_ARR(GATT_CHAR_USER_DESC_UUID) },      /* UUID */
@@ -152,8 +161,8 @@ const gatt_attribute_t simple_profile_att_table[SP_IDX_NB] =
                                                 },
         // Characteristic 2 Value   
         [SP_IDX_CHAR2_VALUE]                =   {
-                                                    { UUID_SIZE_2, UUID16_ARR(SP_CHAR2_UUID) },                 /* UUID */
-                                                    GATT_PROP_READ,                                             /* Permissions */
+                                                    { UUID_SIZE_16, SP_CHAR2_RX_UUID },                 /* UUID */
+                                                    GATT_PROP_READ | GATT_PROP_WRITE,                                             /* Permissions */
                                                     SP_CHAR2_VALUE_LEN,                                         /* Max size of the value */
                                                     NULL,                                                       /* Value of the attribute */	/* Can assign a buffer here, or can be assigned in the application by user */
                                                 },   
@@ -242,104 +251,26 @@ const gatt_attribute_t simple_profile_att_table[SP_IDX_NB] =
                                                 },
 };
 
-/*********************************************************************
- * @fn      sp_gatt_read_cb
- *
- * @brief   Simple Profile user application handles read request in this callback.
- *			应用层在这个回调函数里面处理读的请求。
- *
- * @param   p_read  - the pointer to read buffer. NOTE: It's just a pointer from lower layer, please create the buffer in application layer.
- *					  指向读缓冲区的指针。 请注意这只是一个指针，请在应用程序中分配缓冲区. 为输出函数, 因此为指针的指针.
- *          len     - the pointer to the length of read buffer. Application to assign it.
- *                    读缓冲区的长度，用户应用程序去给它赋值.
- *          att_idx - index of the attribute value in it's attribute table.
- *					  Attribute的偏移量.
- *
- * @return  读请求的长度.
- */
-static void sp_gatt_read_cb(uint8_t *p_read, uint16_t *len, uint16_t att_idx)
+static void show_reg(uint8_t *data,uint32_t len,uint8_t dbg_on)
 {
-    switch (att_idx)
+    uint32_t i=0;
+    if(len == 0 || (dbg_on==0)) return;
+    for(; i<len; i++)
     {
-        case SP_IDX_CHAR1_VALUE:
-            for (int i = 0; i < SP_CHAR1_VALUE_LEN; i++)
-                sp_char1_value[i] = sp_char1_value[0] + i + 1;
-            memcpy(p_read, sp_char1_value, SP_CHAR1_VALUE_LEN);
-            *len = SP_CHAR1_VALUE_LEN;
-        break;
-
-        case SP_IDX_CHAR2_VALUE:
-            for (int i = 0; i < SP_CHAR2_VALUE_LEN; i++)
-                sp_char2_value[i] = sp_char2_value[0] + i + 1;
-            memcpy(p_read, sp_char2_value, SP_CHAR2_VALUE_LEN);
-            *len = SP_CHAR2_VALUE_LEN;
-       break;
-        
-        case SP_IDX_CHAR4_CFG:
-            *len = 2;
-            memcpy(p_read, sp_char4_ccc, 2);
-        break;
-        
-        case SP_IDX_CHAR5_VALUE:
-            for (int i = 0; i < SP_CHAR5_VALUE_LEN; i++)
-                sp_char5_value[i] = sp_char3_value[0] + i + 1;
-            memcpy(p_read, sp_char5_value, SP_CHAR5_VALUE_LEN);
-           *len = SP_CHAR5_VALUE_LEN;
-        break;
-        
-        default:
-        break;
+        co_printf("0x%02X,",data[i]);
     }
-    
-	co_printf("Read request: len: %d  value: 0x%x 0x%x \r\n", *len, (p_read)[0], (p_read)[*len-1]);
-    
+    co_printf("\r\n");
 }
-
-/*********************************************************************
- * @fn      sp_gatt_write_cb
- *
- * @brief   Simple Profile user application handles write request in this callback.
- *			应用层在这个回调函数里面处理写的请求。
- *
- * @param   write_buf   - the buffer for write
- *			              写操作的数据.
- *					  
- *          len         - the length of write buffer.
- *                        写缓冲区的长度.
- *          att_idx     - index of the attribute value in it's attribute table.
- *					      Attribute的偏移量.
- *
- * @return  写请求的长度.
- */
-static void sp_gatt_write_cb(uint8_t *write_buf, uint16_t len, uint16_t att_idx)
+void ntf_data(uint8_t con_idx,uint8_t att_idx,uint8_t *data,uint16_t len)
 {
-	for (int i = 0; i < len; i++)
-    {
-		co_printf("Write request: len: %d, 0x%x \r\n", len, write_buf[i]);
-        if (att_idx == SP_IDX_CHAR1_VALUE)
-            memcpy(sp_char1_value, write_buf, len);
-        
-        if (att_idx == SP_IDX_CHAR3_VALUE)
-            memcpy(sp_char3_value, write_buf, len);
-        
-        if (att_idx == SP_IDX_CHAR5_VALUE)
-            memcpy(sp_char5_value, write_buf, len);
-    }
-	
-	uint16_t uuid = BUILD_UINT16( simple_profile_att_table[att_idx].uuid.p_uuid[0], simple_profile_att_table[att_idx].uuid.p_uuid[1] );
-	if (uuid == GATT_CLIENT_CHAR_CFG_UUID)
-    {
-		co_printf("Notification status changed\r\n");
-        if (att_idx == SP_IDX_CHAR4_CFG)
-        {
-            sp_char4_ccc[0] = write_buf[0];
-            sp_char4_ccc[1] = write_buf[1];
-            co_printf("Char4 ccc: 0x%x 0x%x \r\n", sp_char4_ccc[0], sp_char4_ccc[1]);
-        }
-    }
-
+		gatt_ntf_t ntf_att;
+		ntf_att.att_idx = att_idx;
+		ntf_att.conidx = con_idx;
+		ntf_att.svc_id = sp_svc_id;
+		ntf_att.data_len = len;
+		ntf_att.p_data = data;
+		gatt_notification(ntf_att);
 }
-
 /*********************************************************************
  * @fn      sp_gatt_msg_handler
  *
@@ -355,13 +286,104 @@ static uint16_t sp_gatt_msg_handler(gatt_msg_t *p_msg)
     switch(p_msg->msg_evt)
     {
         case GATTC_MSG_READ_REQ:
-            sp_gatt_read_cb((uint8_t *)(p_msg->param.msg.p_msg_data), &(p_msg->param.msg.msg_len), p_msg->att_idx);
+				{
+/*********************************************************************
+ * @brief   Simple Profile user application handles read request in this callback.
+ *			应用层在这个回调函数里面处理读的请求。
+ *
+ * @param   p_msg->param.msg.p_msg_data  - the pointer to read buffer. NOTE: It's just a pointer from lower layer, please create the buffer in application layer.
+ *					  指向读缓冲区的指针。 请注意这只是一个指针，请在应用程序中分配缓冲区. 为输出函数, 因此为指针的指针.
+ *          p_msg->param.msg.msg_len     - the pointer to the length of read buffer. Application to assign it.
+ *                    读缓冲区的长度，用户应用程序去给它赋值.
+ *          p_msg->att_idx - index of the attribute value in it's attribute table.
+ *					  Attribute的偏移量.
+ *
+ * @return  读请求的长度.
+ */					
+					
+					if(p_msg->att_idx == SP_IDX_CHAR1_VALUE)
+					{
+						memcpy(p_msg->param.msg.p_msg_data, "CHAR1_VALUE", strlen("CHAR1_VALUE"));
+						return strlen("CHAR1_VALUE");
+					}
+					else if(p_msg->att_idx == SP_IDX_CHAR2_VALUE)
+					{
+						memcpy(p_msg->param.msg.p_msg_data, "CHAR2_VALUE", strlen("CHAR2_VALUE"));
+						return strlen("CHAR2_VALUE");
+					}
+					else if(p_msg->att_idx == SP_IDX_CHAR4_CFG)
+					{
+						memcpy(p_msg->param.msg.p_msg_data, sp_char4_ccc, 2);
+						return 2;
+					}					
+					else if(p_msg->att_idx == SP_IDX_CHAR5_VALUE)
+					{
+						memcpy(p_msg->param.msg.p_msg_data, "CHAR5_VALUE", strlen("CHAR5_VALUE"));
+						return strlen("CHAR5_VALUE");
+					}
+				}
             break;
         
         case GATTC_MSG_WRITE_REQ:
-            sp_gatt_write_cb((uint8_t*)(p_msg->param.msg.p_msg_data), (p_msg->param.msg.msg_len), p_msg->att_idx);
+				{
+/*********************************************************************
+ * @brief   Simple Profile user application handles write request in this callback.
+ *			应用层在这个回调函数里面处理写的请求。
+ *
+ * @param   p_msg->param.msg.p_msg_data   - the buffer for write
+ *			              写操作的数据.
+ *					  
+ *          p_msg->param.msg.msg_len      - the length of write buffer.
+ *                        写缓冲区的长度.
+ *          att_idx     - index of the attribute value in it's attribute table.
+ *					      Attribute的偏移量.
+ *
+ * @return  写请求的长度.
+ */				
+					if (p_msg->att_idx == SP_IDX_CHAR1_VALUE)
+					{
+						co_printf("char1_recv:");
+						show_reg(p_msg->param.msg.p_msg_data,p_msg->param.msg.msg_len,1);
+					}
+					else if (p_msg->att_idx == SP_IDX_CHAR2_VALUE)
+					{
+						co_printf("char2_recv:");
+						show_reg(p_msg->param.msg.p_msg_data,p_msg->param.msg.msg_len,1);
+					}
+					else if (p_msg->att_idx == SP_IDX_CHAR3_VALUE)
+					{
+						co_printf("char3_recv:");
+						show_reg(p_msg->param.msg.p_msg_data,p_msg->param.msg.msg_len,1);
+					}
+					else if (p_msg->att_idx == SP_IDX_CHAR5_VALUE)
+					{
+						co_printf("char5_recv:");
+						show_reg(p_msg->param.msg.p_msg_data,p_msg->param.msg.msg_len,1);
+					}
+					else if (p_msg->att_idx == SP_IDX_CHAR1_CFG)
+					{
+						co_printf("char1_ntf_enable:");
+						show_reg(p_msg->param.msg.p_msg_data,p_msg->param.msg.msg_len,1);
+						if(p_msg->param.msg.p_msg_data[0] & 0x1)
+							ntf_char1_enable = 1;
+						if(ntf_char1_enable)
+							ntf_data(p_msg->conn_idx,SP_IDX_CHAR1_VALUE,(uint8_t *)"char1_ntf_data",strlen("char1_ntf_data"));
+					}
+					else if (p_msg->att_idx == SP_IDX_CHAR4_CFG)
+					{
+						co_printf("char4_ntf_enable:");
+						show_reg(p_msg->param.msg.p_msg_data,p_msg->param.msg.msg_len,1);
+						memcpy(sp_char4_ccc,p_msg->param.msg.p_msg_data,2);
+					}
+				}
             break;
-            
+        case GATTC_MSG_LINK_CREATE:
+						co_printf("link_created\r\n");
+            break;
+        case GATTC_MSG_LINK_LOST:
+						co_printf("link_lost\r\n");
+						ntf_char1_enable = 0;
+            break;    
         default:
             break;
     }

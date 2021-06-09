@@ -65,6 +65,7 @@ void  pdm_volume_ctrl(uint32_t stepctrl, uint32_t volgain_r, uint32_t volgain_l)
 //static uint16_t rx_fifo_data_pdm[64];
 //static uint8_t  wr_index_pdm = 0;
 
+#if 0
 __attribute__((weak)) __attribute__((section("ram_code"))) void pdm_isr_ram(void)
 {
     while((REG_PL_RD(PDM_REG_FFIND)&bmSTATUS_RXFFEMPTY) == 0)
@@ -76,4 +77,4 @@ __attribute__((weak)) __attribute__((section("ram_code"))) void pdm_isr_ram(void
         }
     }
 }
-
+#endif

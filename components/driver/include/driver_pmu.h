@@ -235,6 +235,19 @@ void pmu_set_gpio_value(enum system_port_t port, uint8_t bits, uint8_t value);
 uint8_t pmu_get_gpio_value(enum system_port_t port, uint8_t bit);
 
 /*********************************************************************
+ * @fn      pmu_get_gpio_port_value
+ *
+ * @brief   get a uint8_t value of a whole port IO which are controlled by PMU and in GPIO mode.
+ *          example usage:
+ *          pmu_get_gpio_port_value(GPIO_PORT_A);
+ *
+ * @param   port    - which group the io belongs to, @ref system_port_t
+ *
+ * @return  a uint8_t value, every high bit meanes the corresponding IO is high.
+ */
+uint8_t pmu_get_gpio_port_value(enum system_port_t port);
+
+/*********************************************************************
  * @fn      pmu_set_sys_power_mode
  *
  * @brief   used to set system power supply mode, BUCK or LDO

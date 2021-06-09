@@ -48,7 +48,7 @@ static uint8_t scan_rsp_data[] =
   // complete name 设备名字
   0x12,   // length of this data
   GAP_ADVTYPE_LOCAL_NAME_COMPLETE,
-  'S','i','m','p','l','e',' ','P','e','r','i','p','h','e','r','a','l',
+  'S','i','m','p','l','e','_','P','e','r','i','p','h','e','r','a','l',
 
   // Tx power level 发射功率
   0x02,   // length of this data
@@ -109,7 +109,7 @@ void app_gap_evt_cb(gap_event_t *p_event)
         case GAP_EVT_ADV_END:
         {
             co_printf("adv_end,status:0x%02x\r\n",p_event->param.adv_end.status);
-            gap_start_advertising(0);
+            
         }
         break;
         
@@ -117,18 +117,14 @@ void app_gap_evt_cb(gap_event_t *p_event)
         {
             co_printf("All service added\r\n");
             sp_start_adv();
-#ifdef USER_MEM_API_ENABLE
-            //show_mem_list();
-            //show_msg_list();
-            //show_ke_malloc();
-#endif
         }
         break;
 
         case GAP_EVT_SLAVE_CONNECT:
         {
             co_printf("slave[%d],connect. link_num:%d\r\n",p_event->param.slave_connect.conidx,gap_get_connect_num());
-        }
+			gap_security_req(p_event->param.slave_connect.conidx);
+		}
         break;
 
         case GAP_EVT_DISCONNECT:
@@ -136,7 +132,7 @@ void app_gap_evt_cb(gap_event_t *p_event)
             co_printf("Link[%d] disconnect,reason:0x%02X\r\n",p_event->param.disconnect.conidx
                       ,p_event->param.disconnect.reason);
 					  os_timer_stop(&update_param_timer);
-            sp_start_adv();
+            gap_start_advertising(0);
         }
         break;
 
@@ -224,21 +220,46 @@ void simple_peripheral_init(void)
     gap_set_dev_name(local_name, sizeof(local_name));
     os_timer_init( &update_param_timer,param_timer_func,NULL);
 
-    // Initialize security related settings.
+    
+#if 0
     gap_security_param_t param =
     {
-        .mitm = false,
-        .ble_secure_conn = false,
-        .io_cap = GAP_IO_CAP_NO_INPUT_NO_OUTPUT,
-        .pair_init_mode = GAP_PAIRING_MODE_WAIT_FOR_REQ,
-        .bond_auth = true,
+        .mitm = true,		// use PIN code during bonding
+        .ble_secure_conn = false,		//not enable security encryption
+        .io_cap = GAP_IO_CAP_KEYBOARD_ONLY,		//ble device has input ability, will input pin code. 
+        .pair_init_mode = GAP_PAIRING_MODE_WAIT_FOR_REQ,	//need bond
+        .bond_auth = true,	//need bond auth
+    };
+#endif
+#if 0
+    gap_security_param_t param =
+    {
+        .mitm = true,		// use PIN code during bonding
+        .ble_secure_conn = false,		//not enable security encryption
+        .io_cap = GAP_IO_CAP_DISPLAY_ONLY,	//ble device has output ability, will show pin code. 
+        .pair_init_mode = GAP_PAIRING_MODE_WAIT_FOR_REQ, //need bond
+        .bond_auth = true,	//need bond auth
+        .password = 123456,	//set PIN code, it is a dec num between 100000 ~ 999999
+    };
+#endif
+#if 1
+    gap_security_param_t param =
+    {
+        .mitm = false,	// dont use PIN code during bonding
+        .ble_secure_conn = false,	//not enable security encryption
+        .io_cap = GAP_IO_CAP_NO_INPUT_NO_OUTPUT, //ble device has neither output nor input ability, 
+        .pair_init_mode = GAP_PAIRING_MODE_WAIT_FOR_REQ,		//need bond
+        .bond_auth = true,	//need bond auth
         .password = 0,
     };
-    
+#endif
+		// Initialize security related settings.
     gap_security_param_init(&param);
     
     gap_set_cb_func(app_gap_evt_cb);
 
+		//enable bond manage module, which will record bond key and peer service info into flash. 
+		//and read these info from flash when func: "gap_bond_manager_init" executes.
     gap_bond_manager_init(BLE_BONDING_INFO_SAVE_ADDR, BLE_REMOTE_SERVICE_SAVE_ADDR, 8, true);
     //gap_bond_manager_delete_all();
     

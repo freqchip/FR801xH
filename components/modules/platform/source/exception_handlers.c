@@ -29,7 +29,7 @@
 
 #include "ExceptionHandlers.h"
 #include <string.h>
-
+#include "sys_utils.h"
 // ----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
@@ -131,10 +131,13 @@ dumpExceptionStack (ExceptionStackFrame* frame, uint32_t lr)
 // parameter.
 // (Based on Joseph Yiu's, The Definitive Guide to ARM Cortex-M3 and
 // Cortex-M4 Processors, Third Edition, Chap. 12.8, page 402).
-
+extern void platform_reset_patch(uint32_t error);
 void __attribute__ ((section(".after_vectors"),weak,naked))
 HardFault_Handler (void)
 {
+  co_delay_100us(500);
+  platform_reset_patch(0);
+#if 0  
   asm volatile(
       " tst lr,#4       \n"
       " ite eq          \n"
@@ -148,6 +151,7 @@ HardFault_Handler (void)
       : /* Inputs */
       : /* Clobbers */
   );
+#endif  
 }
 
 void __attribute__ ((section(".after_vectors"),weak,used))

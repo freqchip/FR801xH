@@ -428,10 +428,27 @@
               <FileType>1</FileType>
               <FilePath>..\code\demo_peripheral.c</FilePath>
             </File>
+            <File>
+              <FileName>time_rtc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\time_rtc.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
           <GroupName>profiles</GroupName>
+          <Files>
+            <File>
+              <FileName>ota.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\components\ble\profiles\ble_ota\ota.c</FilePath>
+            </File>
+            <File>
+              <FileName>ota_service.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\components\ble\profiles\ble_ota\ota_service.c</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>driver</GroupName>
@@ -520,6 +537,11 @@
               <FileName>driver_pdm.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\components\driver\driver_pdm.c</FilePath>
+            </File>
+            <File>
+              <FileName>driver_adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\components\driver\driver_adc.c</FilePath>
             </File>
           </Files>
         </Group>

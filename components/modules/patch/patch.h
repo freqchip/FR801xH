@@ -6,6 +6,7 @@
 
 void patch_init(void);
 void patch_add_element(void);
+void patch_reset_entry(void);
 
 uint32_t svc_exception_handler_ram(uint32_t stack);
 void low_power_save_entry_imp(uint8_t type);

@@ -449,7 +449,6 @@ void gatt_client_write_req(gatt_client_write_t write_att);
  * @return  None.
  */
 void gatt_client_write_cmd(gatt_client_write_t write_att);
-//void gatt_client_handle_write_cmd(gatt_client_write_t write_att,uint16_t handle);
 void gatt_client_write_cmd_with_handle(gatt_client_write_t write_att,uint16_t handle);
 /*********************************************************************
  * @fn      gatt_client_enable_ntf

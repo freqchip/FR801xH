@@ -16,6 +16,7 @@
 #include "jump_table.h"
 
 #include "sys_utils.h"
+#include "driver_plf.h"
 #include "driver_pmu.h"
 #include "driver_efuse.h"
 #include "driver_system.h"
@@ -347,6 +348,12 @@ uint8_t pmu_get_gpio_value(enum system_port_t port, uint8_t bit)
     sel_reg += port;
     return ( (ool_read(sel_reg) & CO_BIT(bit))>>bit );
 }
+uint8_t pmu_get_gpio_port_value(enum system_port_t port)
+{
+    uint8_t sel_reg = PMU_REG_GPIOA_V;
+    sel_reg += port;
+    return  (ool_read(sel_reg) );
+}
 
 /*********************************************************************
  * @fn      pmu_set_sys_power_mode
@@ -668,10 +675,12 @@ void pmu_disable_irq(uint16_t irqs)
  */
 __attribute__((section("ram_code"))) void pmu_clear_isr_state(uint16_t state_map)
 {
+    GLOBAL_INT_DISABLE();
     ool_write16(PMU_REG_ISR_CLR, state_map);
     co_delay_100us(1);
     //co_delay_10us(12);
     ool_write16(PMU_REG_ISR_CLR, 0);
+    GLOBAL_INT_RESTORE();
 }
 
 /*********************************************************************

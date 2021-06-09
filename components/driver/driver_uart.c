@@ -16,7 +16,7 @@
 #define UART_CLK        14745600
 #define UART_FIFO_TRIGGER (FCR_RX_TRIGGER_00|FCR_TX_TRIGGER_10)
 
-
+#if 0
 __attribute__((weak)) __attribute__((section("ram_code"))) void uart1_isr_ram(void)
 {
     uint8_t int_id;
@@ -53,6 +53,7 @@ __attribute__((weak)) __attribute__((section("ram_code"))) void uart0_isr_ram(vo
         volatile uint32_t line_status = uart_reg->lsr;
     }
 }
+#endif
 
 void uart_init1(uint32_t uart_addr, uart_param_t param)
 {

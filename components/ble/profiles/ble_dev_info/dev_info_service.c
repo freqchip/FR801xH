@@ -42,7 +42,7 @@ static const uint8_t dis_svc_uuid[UUID_SIZE_2] = UUID16_ARR(DEVINFO_SERV_UUID);
 /*
  * GLOBAL VARIABLES (全局变量)
  */
-
+uint8_t dis_svc_id = 0;
 
 /*
  * LOCAL VARIABLES (本地变量)
@@ -295,7 +295,7 @@ void dis_gatt_add_service(void)
     dis_profie_svc.gatt_msg_handler = dis_gatt_msg_handler;
 
 
-    gatt_add_service(&dis_profie_svc);
+    dis_svc_id = gatt_add_service(&dis_profie_svc);
 }
 
 

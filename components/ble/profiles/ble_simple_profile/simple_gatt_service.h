@@ -72,8 +72,7 @@ enum
 /*
  * GLOBAL VARIABLES (全局变量)
  */
-extern const gatt_attribute_t simple_profile_att_table[];
-
+extern uint8_t sp_svc_id;
 /*
  * LOCAL VARIABLES (本地变量)
  */

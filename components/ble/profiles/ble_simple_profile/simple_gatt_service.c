@@ -238,7 +238,7 @@ const gatt_attribute_t simple_profile_att_table[SP_IDX_NB] =
         // Characteristic 5 Value
         [SP_IDX_CHAR5_VALUE]                =   {
                                                     { UUID_SIZE_2, UUID16_ARR(SP_CHAR5_UUID) },                 /* UUID */
-                                                    GATT_PROP_AUTHEN_WRITE | GATT_PROP_AUTHEN_READ,             /* Permissions */
+                                                    GATT_PROP_WRITE | GATT_PROP_READ,             /* Permissions */
                                                     SP_CHAR5_VALUE_LEN,                                         /* Max size of the value */
                                                     NULL,                                                       /* Value of the attribute */    /* Can assign a buffer here, or can be assigned in the application by user */
                                                 },

@@ -92,7 +92,7 @@ enum pmu_isr_enable_t
 };
 enum charge_current_t
 {
-    CHG_CUR_29MA    =   0,
+    CHG_CUR_18MA    =   0,
     CHG_CUR_40MA    =   0x2,
     CHG_CUR_72MA    =   0x4,
     CHG_CUR_113MA   =   0x8,
@@ -373,6 +373,20 @@ void pmu_set_lp_clk_src(enum pmu_lp_clk_src_t src);
  * @return  None.
  */
 void pmu_port_wakeup_func_set(uint32_t gpios);
+
+/*********************************************************************
+ * @fn      pmu_port_wakeup_func_clear
+ *
+ * @brief   indicate which ports should be removed detection by PMU GPIO
+ *          monitor module.
+ *
+ * @param   gpios   - 32bit value, bit num corresponding to pin num.
+ *                    sample: 0x08080808 means PA3, PB3, PC3, PD3 will be
+ *                    checked.
+ *
+ * @return  None.
+ */
+void pmu_port_wakeup_func_clear(uint32_t gpios);
 
 /*********************************************************************
  * @fn      pmu_port_wakeup_func_clear

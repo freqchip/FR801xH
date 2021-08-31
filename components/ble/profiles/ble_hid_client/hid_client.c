@@ -81,7 +81,29 @@ uint16_t hid_client_msg_handler(gatt_msg_t *p_msg)
         case GATTC_MSG_SVC_REPORT:
         {
             gatt_svc_report_t *svc_rpt = (gatt_svc_report_t *)(p_msg->param.msg.p_msg_data);
-            co_printf("svc:%d,start_hdl:%d,end_hdl:%d\r\n",svc_rpt->uuid_len,svc_rpt->start_hdl,svc_rpt->end_hdl);
+            co_printf("svc_uuid_len:%d,uuid:0x%x,shdl:%d,ehdl:%d\r\n",svc_rpt->uuid_len,*(uint16_t *)(svc_rpt->uuid),svc_rpt->start_hdl,svc_rpt->end_hdl);
+#if 0   //show service attributors
+            for(uint16_t i = 0; i<(svc_rpt->end_hdl - svc_rpt->start_hdl); i++)
+            {
+                if(svc_rpt->info[i].att_type > ATT_TYPE_DESC)
+                    break;
+                //co_printf("info[%d].att_type:%d\r\n",i,svc_rpt->info[i].att_type);
+                if(svc_rpt->info[i].att_type == ATT_TYPE_CHAR_DECL)
+                    co_printf("[%d],char_decl, prop:0x%X,handle:%d\r\n",i+svc_rpt->start_hdl+1,svc_rpt->info[i].char_decl.prop,svc_rpt->info[i].char_decl.handle);
+
+                if(svc_rpt->info[i].att_type == ATT_TYPE_VAL)
+                {
+                    co_printf("[%d],char, uuid_len:%d,uuid:",i+svc_rpt->start_hdl+1,svc_rpt->info[i].att_value.uuid_len);
+                    show_reg(svc_rpt->info[i].att_value.uuid,svc_rpt->info[i].att_value.uuid_len,1);
+                }
+                if(svc_rpt->info[i].att_type == ATT_TYPE_DESC)
+                {
+                    co_printf("[%d],char_desc&cfg, uuid_len:%d,uuid:",i+svc_rpt->start_hdl+1,svc_rpt->info[i].att_value.uuid_len);
+                    show_reg(svc_rpt->info[i].att_value.uuid,svc_rpt->info[i].att_value.uuid_len,1);
+                }
+            }
+#endif
+
 #if 1
             if(memcmp(svc_rpt->uuid,hid_svc_uuid,sizeof(hid_svc_uuid)) == 0)
             {

@@ -337,7 +337,7 @@ void system_latency_disable(uint8_t conidx);
  * @fn      system_get_curr_time
  *
  * @brief   get how many milliseconds have passed after system start-up,
- *          and the value will loop back to 0 after reaching 858993456.
+ *          and the value will loop back to 0 after reaching 83886079(0x4FFFFFF).
  *
  * @param   None.
  *
@@ -390,7 +390,7 @@ void system_set_tx_power(enum rf_tx_power_t tx_power);
 /*********************************************************************
  * @fn      system_lvd_protect_handle
  *
- * @brief   Protection measures are maded when device in low power state.
+ * @brief   Used to halt system when low voltage is detected.
  *
  * @param   None.
  *

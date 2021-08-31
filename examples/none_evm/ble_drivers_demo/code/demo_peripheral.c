@@ -32,13 +32,17 @@ __attribute__((section("ram_code"))) void uart0_isr_ram(void)
 
     if(int_id == 0x04 || int_id == 0x0c )   /* Receiver data available or Character time-out indication */
     {
-        c = uart_reg->u1.data;
-        uart_putc_noint_no_wait(UART0,c);
+        while(uart_reg->lsr & 0x01)
+        {
+            c = uart_reg->u1.data;
+            uart_putc_noint_no_wait(UART0,c);
+        }
     }
     else if(int_id == 0x06)
     {
-        uart_reg->u3.iir.int_id = int_id;
-        uart_reg->u2.ier.erlsi = 0;
+        //uart_reg->u3.iir.int_id = int_id;
+        //uart_reg->u2.ier.erlsi = 0;
+        volatile uint32_t line_status = uart_reg->lsr;
     }
 }
 __attribute__((section("ram_code"))) void uart1_isr_ram(void)
@@ -51,13 +55,17 @@ __attribute__((section("ram_code"))) void uart1_isr_ram(void)
 
     if(int_id == 0x04 || int_id == 0x0c )   /* Receiver data available or Character time-out indication */
     {
-        c = uart_reg->u1.data;
-        uart_putc_noint_no_wait(UART1,c);
+        while(uart_reg->lsr & 0x01)
+        {
+            c = uart_reg->u1.data;
+            uart_putc_noint_no_wait(UART1,c);
+        }
     }
     else if(int_id == 0x06)
     {
-        uart_reg->u3.iir.int_id = int_id;
-        uart_reg->u2.ier.erlsi = 0;
+        //uart_reg->u3.iir.int_id = int_id;
+        //uart_reg->u2.ier.erlsi = 0;
+        volatile uint32_t line_status = uart_reg->lsr;
     }
 }
 
@@ -67,13 +75,23 @@ void demo_uart0(void)
     system_set_port_mux(GPIO_PORT_D, GPIO_BIT_6, PORTD6_FUNC_UART0_RXD);
     system_set_port_mux(GPIO_PORT_D, GPIO_BIT_7, PORTD7_FUNC_UART0_TXD);
     uart_init(UART0, BAUD_RATE_115200);
-    NVIC_EnableIRQ(UART0_IRQn);
     co_printf("uart0 demo\r\n");
 
     system_set_port_pull(GPIO_PA2, true);
     system_set_port_mux(GPIO_PORT_A, GPIO_BIT_2, PORTA2_FUNC_UART1_RXD);
     system_set_port_mux(GPIO_PORT_A, GPIO_BIT_3, PORTA3_FUNC_UART1_TXD);
-    uart_init(UART1, BAUD_RATE_115200);
+    //uart_init(UART1, BAUD_RATE_115200);
+    uart_param_t param =
+    {
+        .baud_rate = 115200,
+        .data_bit_num = 8,
+        .pari = 0,
+        .stop_bit = 1,
+    };
+    uart_init1(UART1, param);
+
+
+    NVIC_EnableIRQ(UART0_IRQn);
     NVIC_EnableIRQ(UART1_IRQn);
     co_printf("uart1 demo\r\n");
 }
@@ -211,6 +229,7 @@ static uint8_t tim0_run_num = 0;
 __attribute__((section("ram_code"))) void timer0_isr_ram(void)
 {
     timer_clear_interrupt(TIMER0);
+    co_delay_10us(1);
     //timer_reload(TIMER0);
     if(tick0>10000) //1s
     {
@@ -226,6 +245,7 @@ __attribute__((section("ram_code"))) void timer0_isr_ram(void)
 __attribute__((section("ram_code"))) void timer1_isr_ram(void)
 {
     timer_clear_interrupt(TIMER1);
+    co_delay_10us(1);
     //timer_reload(TIMER1);
     if(tick1>20000) //4s
     {
@@ -968,7 +988,7 @@ void peripheral_demo(void)
 #endif
 
 #if RTC_TEST_ENABLE
-    demo_rtc();
+    //demo_rtc();
     demo_rtc_start_timer();
 #endif
 

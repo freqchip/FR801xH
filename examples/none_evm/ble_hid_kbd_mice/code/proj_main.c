@@ -295,7 +295,7 @@ void user_entry_after_ble_init(void)
     gap_security_param_t param =
     {
         .mitm = false,
-        .ble_secure_conn = true,			//true
+        .ble_secure_conn = false,			//true
         .io_cap = GAP_IO_CAP_NO_INPUT_NO_OUTPUT,
         .pair_init_mode = GAP_PAIRING_MODE_WAIT_FOR_REQ,
         .bond_auth = true,

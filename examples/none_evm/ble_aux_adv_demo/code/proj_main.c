@@ -48,7 +48,7 @@ void user_init_static_memory(void)
 #if TEST_ADV_MODE_UNDIRECT_DOUBLE_ADV
     initial_static_memory(9, 4, 6, 3, 251, 3, 251, 254, 0x800); //adv_act_num must > 3 for double adv
 #else
-    initial_static_memory(9, 1, 6, 6, 251, 6, 251, 254*4, 0x800);
+    initial_static_memory(9, 2, 6, 6, 251, 6, 251, 254*4, 0x800);
 #endif
 }
 

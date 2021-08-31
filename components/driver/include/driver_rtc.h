@@ -63,6 +63,17 @@ void rtc_init(void);
 void rtc_alarm(enum rtc_idx_t rtc_idx, uint32_t count_ms);
 
 /*********************************************************************
+ * @fn      rtc_get_value
+ *
+ * @brief   get current rtc value. unit: 1000000 / pmu_get_rc_clk(false) us
+ *
+ * @param   None
+ *
+ * @return  Current rtc clock counter.
+ */
+uint32_t rtc_get_value(void);
+
+/*********************************************************************
  * @fn      rtc_disalarm
  *
  * @brief   stop a running rtc.

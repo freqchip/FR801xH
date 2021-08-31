@@ -384,7 +384,7 @@ __attribute__((section("ram_code"))) void uart0_isr_ram(void)
 
     if(int_id == 0x04 || int_id == 0x0c )   /* Receiver data available or Character time-out indication */
     {
-        //while(uart_reg_ram->lsr & 0x01)
+        while(uart_reg_ram->lsr & 0x01)
         {
             app_at_recv_c(uart_reg_ram->u1.data);
         }
@@ -413,8 +413,15 @@ void at_init(void)
     system_set_port_pull(GPIO_PD4, true);
     system_set_port_mux(GPIO_PORT_D, GPIO_BIT_4, PORTD4_FUNC_UART0_RXD);
     system_set_port_mux(GPIO_PORT_D, GPIO_BIT_5, PORTD5_FUNC_UART0_TXD);
-    uart_init(UART0, find_uart_idx_from_baudrate(gAT_buff_env.uart_param.baud_rate));
-    //uart_init_x(gAT_buff_env.uart_param);
+    //uart_init(UART0, find_uart_idx_from_baudrate(gAT_buff_env.uart_param.baud_rate));
+    uart_param_t param =
+    {
+        .baud_rate = gAT_buff_env.uart_param.baud_rate,
+        .data_bit_num = gAT_buff_env.uart_param.data_bit_num,
+        .pari = gAT_buff_env.uart_param.pari,
+        .stop_bit = gAT_buff_env.uart_param.stop_bit,
+    };
+    uart_init1(UART0,param);
     NVIC_EnableIRQ(UART0_IRQn);
 
     gAT_env.at_task_id = os_task_create( at_task_func );
@@ -563,7 +570,6 @@ void at_load_info_from_flash(void)
     if( gAT_buff_env.flash_page_idx > 20)
     {
         gAT_buff_env.uart_param.baud_rate = 115200;
-        gAT_buff_env.uart_param.uart_idx = 0;
         gAT_buff_env.uart_param.data_bit_num = 8;
         gAT_buff_env.uart_param.pari = 0;
         gAT_buff_env.uart_param.stop_bit = 1;

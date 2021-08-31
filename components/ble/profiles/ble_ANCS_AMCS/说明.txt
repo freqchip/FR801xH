@@ -1,0 +1,52 @@
+使用步骤：
+1 在工程内添加AMS_client.c和ANCS_AMS_client.c。 在入口函数void user_entry_after_ble_init(void) 内调用 ANCS_AMS_gatt_add_client();
+
+2 case GAP_EVT_SLAVE_CONNECT: slave角色链接成功的事件回调内，调用
+gap_security_req(event->param.slave_connect.conidx); 进行加密请求。
+
+3 在case GAP_SEC_EVT_SLAVE_ENCRYPT: slave角色加密完成的事件回调内，调用如下代码，扫描ANCS_AMS的服务。
+gatt_discovery_all_peer_svc(ANCS_AMS_client_id,event->param.slave_connect.conidx);
+
+AMS和ANCS处理消息说明分别如下：
+
+/****ANCS********/
+4 ANCS_Client.c 内部接收消息的地方在这个函数
+void ANCS_recv_ntf_src(uint8_t conidx,uint8_t *p_data, uint16_t len);
+void ANCS_recv_data_src(uint8_t conidx,uint8_t *p_data, uint16_t len);
+第1个函数显示ios要推送的消息的类型，消息uid，设备回复要接收消息的各种属性id。
+第2个函数显示ios根据设备回复的属性id，接收到的消息细节。默认一共是8个属性id。
+
+5 ANCS_recv_data_src函数内，显示消息细节，各种类型消息，格式有utf-8 和ascii，参见注释。
+
+6 每次的消息会传NTF_ATT_ID_POSITIVE_ACT 和 NTF_ATT_ID_NEGATIVE_ACT，表示执行消极或积极的动作的结果。
+执行 函数 ANCS_perform_ntf_act对当前消息进行消极或积极的动作。
+例如 
+ANCS_perform_ntf_act(0,call_notification_uid,ANCS_ACT_ID_POSITIVE); 可以接听电话。
+ANCS_perform_ntf_act(0,call_notification_uid,ANCS_ACT_ID_NEGATIVE); 可以挂断电话。
+
+
+/****AMS********/
+4 AMS_Client.c 内部接收消息的地方在这个函数
+void AMS_recv_entity_info(uint8_t conidx,uint8_t *p_data, uint16_t len)
+
+5 AMS_recv_entity_info函数内，示例代码显示了订阅的ENTI_ID_TRACK 里的各属性的处理：作者、专辑名、歌曲名、总时长。其他消息类型，用户需要调用 函数 asm_subscribe_entity_update() 订阅对应的entity之后获取。
+注：信息在变化后推送，没变化的属性不会被推送。
+
+6 要控制歌曲播放，使用函数ams_crtl_cmd()进行。
+
+7 如果订阅的内容过长，导致内容被截断，可以调用ams_subscribe_entity_att(...)来单独获取某一个信息。
+
+8 经测试，ams可以控制非ios自带的音乐播放器，如：网易云音乐
+
+示例代码：
+a) 链接建立后，按下按键，在按键回调里调用以下代码订阅歌曲的作者、专辑名、歌曲名、总时长。
+ams_subscribe_entity_update(ENTI_ID_TRACK ,BIT(TRACK_ATT_ID_ARTIST)|BIT(TRACK_ATT_ID_ALBUM)|BIT(TRACK_ATT_ID_TITLE)|BIT(TRACK_ATT_ID_DURATION)); AMS_recv_entity_info(...) 函数显示了订阅的歌曲信息，每切到下一首歌时，ios会推送这些内容。
+b) 链接建立后，按下按键，在按键回调里调用以下代码播放下一首歌。
+ams_crtl_cmd(CMD_ID_NEXT_TRACK);
+c) AMS_recv_entity_info(...) 函数显示了订阅的歌曲信息，有可能信息太长有内容被截断的情况。按下面处理
+            else if(p_data[1] ==TRACK_ATT_ID_TITLE)
+            {
+                //show_utf8_string(&rsp[3],len -3);
+                if(p_data[2] & ENTI_UPDATE_FLAG_TRUNCATED)
+                    ams_subscribe_entity_att(ENTI_ID_TRACK,BIT(TRACK_ATT_ID_TITLE));
+            }

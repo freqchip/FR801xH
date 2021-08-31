@@ -370,6 +370,23 @@ uint16_t adc_get_ref_voltage(enum adc_reference_t ref)
 }
 
 /*********************************************************************
+ * @fn      adc_set_ref_voltage
+ *
+ * @brief   use to set adc reference voltage after triming is done.
+ *
+ * @param   ref_avdd    - avdd
+ *          ref_internal- internal 1.2v
+ *       
+ * @return  None.
+ */
+void adc_set_ref_voltage(uint16_t ref_avdd, uint16_t ref_internal)
+{
+    adc_ref_internal = ref_internal;
+    adc_ref_avdd = ref_avdd;
+    adc_ref_calib = true;
+}
+
+/*********************************************************************
  * @fn      adc_init
  *
  * @brief   initiate ADC with parameters stored in cfg.

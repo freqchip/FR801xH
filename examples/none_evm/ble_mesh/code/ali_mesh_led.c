@@ -14,6 +14,7 @@
 
 #include "sha256.h"
 #include "co_printf.h"
+#include "co_list.h"
 #include "os_timer.h"
 #include "os_mem.h"
 #include "sys_utils.h"
@@ -61,6 +62,18 @@ typedef struct led_hsl_s
     uint16_t led_s;
 }led_hsl_t;
 
+enum app_mesh_user_adv_state_t {
+    APP_MESH_USER_ADV_IDLE,
+    APP_MESH_USER_ADV_SENDING,
+};
+
+struct app_mesh_user_adv_item_t {
+    struct co_list_hdr hdr;
+    uint8_t duration;
+    uint8_t adv_len;
+    uint8_t adv_data[];
+};
+
 /*
  * GLOBAL VARIABLES 
  */
@@ -68,6 +81,8 @@ typedef struct led_hsl_s
 /*
  * LOCAL VARIABLES 
  */
+static enum app_mesh_user_adv_state_t app_mesh_user_adv_state = APP_MESH_USER_ADV_IDLE;
+static struct co_list app_mesh_user_adv_list;
 
 /*
  * LOCAL FUNCTIONS 
@@ -115,6 +130,18 @@ static mesh_model_t light_models[] =
         .msg_handler = app_mesh_recv_vendor_msg,
     },
     #endif
+    [4] = {
+        .model_id = MESH_MODEL_ID_ONOFF,
+        .model_vendor = false,
+        .element_idx = 1,
+        .msg_handler = app_mesh_recv_gen_onoff_led_msg,
+    },
+    [5] = {
+        .model_id = MESH_MODEL_ID_ONOFF,
+        .model_vendor = false,
+        .element_idx = 2,
+        .msg_handler = app_mesh_recv_gen_onoff_led_msg,
+    },
 };
 
 static os_timer_t app_mesh_50Hz_check_timer;
@@ -157,6 +184,14 @@ static const struct ali_mesh_sub_map_t ali_mesh_sub_map[] =
         .element_idx = 0,
         .group_addr = MESH_ALI_GROUP_ADDR_LED,
     },
+    [4] = {
+        .element_idx = 1,
+        .group_addr = MESH_ALI_GROUP_ADDR_LED,
+    },
+    [5] = {
+        .element_idx = 2,
+        .group_addr = MESH_ALI_GROUP_ADDR_LED,
+    },
 };
 
 static const struct ali_mesh_pub_map_t ali_mesh_pub_map[] = {
@@ -178,6 +213,16 @@ static const struct ali_mesh_pub_map_t ali_mesh_pub_map[] = {
     [3] = {
         .element_idx = 0,
         .model_id = MESH_MODEL_ID_VENDOR_ALI,
+        .pub_addr = MESH_ALI_PUBLISH_ADDR,
+    },
+    [4] = {
+        .element_idx = 1,
+        .model_id = MESH_MODEL_ID_ONOFF,
+        .pub_addr = MESH_ALI_PUBLISH_ADDR,
+    },
+    [5] = {
+        .element_idx = 2,
+        .model_id = MESH_MODEL_ID_ONOFF,
         .pub_addr = MESH_ALI_PUBLISH_ADDR,
     },
 };
@@ -858,7 +903,14 @@ void app_mesh_led_init(void)
     }
     mesh_set_cb_func(mesh_callback_func);
     
-    mesh_init(MESH_FEATURE_RELAY, MESH_INFO_STORE_ADDR);
+    /* user to start mesh stack initialization */
+    mesh_composition_cfg_t dev_cfg = {     
+        .cid = 0x02fc, // freqchip
+        .vid = 0x000f,
+        .pid = 0x0006,
+        .features = MESH_FEATURE_RELAY,
+    };
+    mesh_init(dev_cfg, (void *)ali_mesh_key_bdaddr, MESH_INFO_STORE_ADDR);
 
     for(uint8_t i=0; i<sizeof(light_models)/sizeof(light_models[0]); i++)
     {
@@ -955,7 +1007,7 @@ __attribute__((section("ram_code"))) void pmu_gpio_isr_ram(void)
  *
  * @return  None.
  */
-void app_mesh_send_user_adv_packet(uint8_t duration, uint8_t *adv_data, uint8_t adv_len)
+static void app_mesh_send_user_adv_packet_entity(uint8_t duration, uint8_t *adv_data, uint8_t adv_len)
 {
     gap_adv_param_t adv_param;
 
@@ -965,8 +1017,50 @@ void app_mesh_send_user_adv_packet(uint8_t duration, uint8_t *adv_data, uint8_t 
     adv_param.adv_intv_max = 32;
     adv_param.adv_chnl_map = GAP_ADV_CHAN_ALL;
     adv_param.adv_filt_policy = GAP_ADV_ALLOW_SCAN_ANY_CON_ANY;
-    gap_set_advertising_param(&adv_param);
-    gap_set_advertising_data(adv_data, adv_len);
-    gap_start_advertising(duration);
+    gap_set_advertising_param1(&adv_param);
+    gap_set_advertising_data1(adv_data, adv_len);
+    gap_start_advertising1(duration);
 }
 
+void app_mesh_send_user_adv_end(void)
+{
+    if(co_list_is_empty(&app_mesh_user_adv_list)) {
+        app_mesh_user_adv_state = APP_MESH_USER_ADV_IDLE;
+    }
+    else {
+        struct app_mesh_user_adv_item_t *item = (struct app_mesh_user_adv_item_t *)co_list_pop_front(&app_mesh_user_adv_list);
+        if(item) {
+            app_mesh_user_adv_state = APP_MESH_USER_ADV_SENDING;
+            app_mesh_send_user_adv_packet_entity(item->duration, &item->adv_data[0], item->adv_len);
+            os_free((void *)item);
+        }
+    }
+}
+
+/*********************************************************************
+ * @fn      ali_mesh_send_user_adv_packet
+ *
+ * @brief   this is an example to show how to send data defined by user, 
+ *          this function should not be recall until event GAP_EVT_ADV_END 
+ *          is received.
+ *
+ * @param   duration    - how many 10ms advertisng will last.
+ *          adv_data    - advertising data pointer
+ *          adv_len     - advertising data length
+ *
+ * @return  None.
+ */
+void app_mesh_send_user_adv_packet(uint8_t duration, uint8_t *adv_data, uint8_t adv_len)
+{
+    if(app_mesh_user_adv_state == APP_MESH_USER_ADV_IDLE) {
+        app_mesh_user_adv_state = APP_MESH_USER_ADV_SENDING;
+        app_mesh_send_user_adv_packet_entity(duration, adv_data, adv_len);
+    }
+    else {
+        struct app_mesh_user_adv_item_t *item = (struct app_mesh_user_adv_item_t *)os_malloc(sizeof(struct app_mesh_user_adv_item_t) + adv_len);
+        item->duration = duration;
+        item->adv_len = adv_len;
+        memcpy(&item->adv_data[0], adv_data, adv_len);
+        co_list_push_back(&app_mesh_user_adv_list, &item->hdr);
+    }
+}

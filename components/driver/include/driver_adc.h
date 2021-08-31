@@ -40,6 +40,25 @@
         adc_enable(NULL, NULL, 0);
 
         adc_get_result(ADC_TRANS_SOURCE_PAD, 0x01, &result);
+
+    3. sample voltage from PAD , ref = inner 1.2V
+        struct adc_cfg_t cfg;
+        uint16_t result;
+        
+        system_set_port_mux(GPIO_PORT_D, GPIO_BIT_4, PORTD4_FUNC_ADC0);
+        
+        memset((void*)&cfg, 0, sizeof(cfg));
+        cfg.src = ADC_TRANS_SOURCE_PAD;
+        cfg.ref_sel = ADC_REFERENCE_INTERNAL;
+        cfg.int_ref_cfg = ADC_INTERNAL_REF_1_2;
+        cfg.channels = 0x01;
+        cfg.route.pad_to_sample = 1;
+        cfg.clk_sel = ADC_SAMPLE_CLK_64K_DIV13;
+        cfg.clk_div = 0x3f;
+        adc_init(&cfg);
+        adc_enable(NULL, NULL, 0);
+
+        adc_get_result(ADC_TRANS_SOURCE_PAD, 0x01, &result);
  */
 
 enum adc_reference_t {
@@ -166,6 +185,18 @@ void adc_get_result(enum adc_trans_source_t src, uint8_t channels, uint16_t *buf
  * @return  reference voltage, unit: mv.
  */
 uint16_t adc_get_ref_voltage(enum adc_reference_t ref);
+
+/*********************************************************************
+ * @fn      adc_set_ref_voltage
+ *
+ * @brief   use to set adc reference voltage after triming is done.
+ *
+ * @param   ref_avdd    - avdd
+ *          ref_internal- internal 1.2v
+ *       
+ * @return  None.
+ */
+void adc_set_ref_voltage(uint16_t ref_avdd, uint16_t ref_internal);
 
 /*********************************************************************
  * @fn      adc_init

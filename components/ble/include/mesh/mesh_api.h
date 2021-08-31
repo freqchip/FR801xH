@@ -28,6 +28,8 @@
 #define MODEL_TYPE_SIG              0   //!< SIG standard model type.
 #define MODEL_TYPE_VENDOR           1   //!< Vender specific model type.
 
+#define MESH_ERR_NO_ERROR              0x0000
+#define MESH_ERR_NOT_SUBSCRIBE         0x0a80
 /*
  * CONSTANTS 
  */
@@ -53,7 +55,10 @@ enum mesh_event_type_t
     MESH_EVT_COMPO_DATA_REQ,            //!< Received composition data request from provisioner.
     MESH_EVT_ADV_REPORT,                //!< User interface for deal ADV packets received from adv bearer.
     MESH_EVT_MODEL_ADDR_PUBLISHED,      //!< Register publish address for a specified model, used in ali mesh provisioning procedure
-    MESH_EVT_PROXY_ADV_TIMEOUT_IND,     //!<Received information stop mesh proxy adv event
+    MESH_EVT_PROXY_END_IND,             //!< Received information stop mesh proxy adv event
+    MESH_EVT_MODEL_DELETED_GRPADDR,     //!< Mode has deleted a group addr, used in user delete group.
+    MESH_EVT_PROXY_CTRL_STATUS,         //!< Used to report status after calling mesh_proxy_ctrl
+    MESH_EVT_FATAL_ERROR,               //!< Fatal error is detected, system should be reset imediately
 };
 
 // Mesh network information update type
@@ -113,6 +118,19 @@ enum mesh_prov_state
     MESH_PROV_FAILED,       //!< Provisioning failed
 };
 
+/// Mesh composition data configuration
+typedef struct mesh_composition_cfg
+{
+    /// Mask of supported features (@see enum mesh_feature_t)
+    uint16_t features;
+    /// 16-bit company identifier assigned by the Bluetooth SIG
+    uint16_t cid;
+    /// 16-bit vendor-assigned product identifier
+    uint16_t pid;
+    /// 16-bit vendor-assigned product version identifier
+    uint16_t vid;
+} mesh_composition_cfg_t ;
+
 // Mesh publish message type define
 typedef struct
 {
@@ -161,6 +179,7 @@ typedef struct
     uint8_t         not_relayed;        //!< 1 = if message have been received by an immediate peer; 0 = it can have been relayed 
     uint32_t        opcode;             //!< Mesh message operation code (can be 1, 2 or 3 octet operation code) 
     uint16_t        src;                //!< Source address of the message (Required for a response) 
+    uint16_t        dst;                //!< Destination address of the message 
     uint16_t        msg_len;            //!< Message length     
     const uint8_t   *msg;               //!< Message content 
 } mesh_model_msg_ind_t;
@@ -275,6 +294,7 @@ typedef struct
         mesh_model_msg_ind_t 	model_msg;              //!< Mesh model message.
         uint8_t                 compo_data_req_page;	//!< Mesh composition data request page.
         gap_evt_adv_report_t 	adv_report;             //!< ADV report from adv bearer.
+        uint16_t                proxy_adv_status;       //!< Mesh Proxy advertising status
     } param;
 } mesh_event_t;
 
@@ -328,18 +348,43 @@ void mesh_set_cb_func(mesh_callback_func_t mesh_evt_cb);
 void mesh_set_scan_parameter(uint16_t interval, uint32_t window);
 
 /*********************************************************************
+ * @fn      mesh_set_adv_parameter
+ *
+ * @brief   Custom adv parameters, this function should be called before
+ *          calling mesh_init if necessery.
+ *
+ * @param   interval    - adv interval, unit: 625us, default: 32.
+ *          adv_nb      - adv number, default: 5.
+ *
+ * @return  None.
+ */
+void mesh_set_adv_parameter(uint16_t interval, uint16_t adv_nb);
+
+/*********************************************************************
+ * @fn      mesh_set_scan_rsp_data
+ *
+ * @brief   use this function to set scan response data in PB-GATT and Proxy advertising
+ *
+ * @param   length  - scan response data length
+ *          data    - scan response data pointer
+ *
+ * @return  None.
+ */
+void mesh_set_scan_rsp_data(uint8_t length, uint8_t *data);
+
+/*********************************************************************
  * @fn      mesh_init
  *
  * @brief   Initialize mesh function in stack.
  *
- * @param   feature -   indicate which features should be enabled.
+ * @param   cfg   - mesh composition data configuration.
+ *          addr  - local bd addr used in mesh advertising
  *          store_addr  - the flash address used to store mesh link information,
  *                        such as network key, app key, binding info, etc.
  *
  * @return  None.
  */
-void mesh_init(enum mesh_feature_t feature, uint32_t store_addr);
-
+void mesh_init(mesh_composition_cfg_t cfg, struct bd_addr_ *addr, uint32_t store_addr);
 /*********************************************************************
  * @fn      mesh_set_runtime
  *
@@ -374,6 +419,29 @@ void mesh_start(void);
 void mesh_stop(void);
 
 /*********************************************************************
+ * @fn      mesh_proxy_ctrl
+ *
+ * @brief   control mesh proxy advertising status.
+ *
+ * @param   enable  - 1, Enable Connectable mode with Network id during 60s.
+ *                    0, If Proxy is advertising, stop it immediately
+ *
+ * @return  None.
+ */
+void mesh_proxy_ctrl(uint8_t enable);
+
+/*********************************************************************
+ * @fn      mesh_get_node_unicast_addr
+ *
+ * @brief   get node unicast address.
+ *
+ * @param   None.
+ *
+ * @return  unicast address.
+ */
+uint16_t mesh_get_node_unicast_addr(void);
+
+/*********************************************************************
  * @fn      mesh_model_bind_appkey
  *
  * @brief   binding model with indicate app key
@@ -398,6 +466,19 @@ void mesh_model_bind_appkey(uint32_t model_id, uint8_t element, uint8_t app_key_
  * @return  None.
  */
 void mesh_model_sub_group_addr(uint32_t model_id, uint8_t element, uint16_t group_addr);
+
+/*********************************************************************
+ * @fn      mesh_model_del_group_addr
+ *
+ * @brief   model delete a group address
+ *
+ * @param   model_id    - the operated model id
+ *          element     - which element this model belongs to
+ *          group_addr  - which group address does this model delete
+ *
+ * @return  None.
+ */
+void mesh_model_del_group_addr(uint32_t model_id, uint8_t element, uint16_t group_addr);
 
 /*********************************************************************
  * @fn      mesh_model_add_publish_addr
@@ -461,6 +542,19 @@ void mesh_get_remote_param(uint16_t * src,uint8_t * app_key_lid);
 void mesh_publish_msg(mesh_publish_msg_t *p_publish_msg);
 
 /*********************************************************************
+ * @fn      mesh_stop_prov_link_timeout_timer
+ *
+ * @brief   When PB-GATT is enabled, connection will be removed by provision implementation if no
+ *          provision message is received within 60 seconds. This API is used to stop this timer
+ *          for custom usage.
+ *
+ * @param   None.
+ *
+ * @return  None.
+ */
+void mesh_stop_prov_link_timeout_timer(void);
+
+/*********************************************************************
  * @fn      mesh_send_rsp
  *
  * @brief   Send a response message in mesh network.
@@ -521,6 +615,17 @@ void mesh_send_prov_auth_data_rsp(uint8_t accept, uint8_t auth_size, uint8_t *au
 void mesh_send_compo_data_rsp(uint8_t page, uint8_t *data, uint8_t length);
 
 /*********************************************************************
+ * @fn      mesh_iv_update
+ *
+ * @brief   used to launch IV Update procedure
+ *
+ * @param   update  - Transit to IV Update in Progress operation (true) or to Normal operation (false)
+ *
+ * @return  None.
+ */
+void mesh_iv_update(bool update);
+
+/*********************************************************************
  * @fn      mesh_info_store_into_flash
  *
  * @brief   store mesh network information into flash. For avoid program flash
@@ -544,6 +649,5 @@ void mesh_info_store_into_flash(void);
  */
 void mesh_info_clear(void);
 
-void mesh_proxy_adv_stop(void);
 #endif
 

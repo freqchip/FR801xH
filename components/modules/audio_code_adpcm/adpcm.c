@@ -2,12 +2,14 @@
 #include "adpcm.h"
 //This code is for dialogic ADPCM 
 /* Intel ADPCM step variation table */
-static int indexTable[16] = {
+static int indexTable[16] =
+{
 	-1, -1, -1, -1, 2, 4, 6, 8,
 	-1, -1, -1, -1, 2, 4, 6, 8,
 };
 
-static int stepsizeTable[89] = {
+static int stepsizeTable[89] =
+{
 	7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
 	19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
 	50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
@@ -43,7 +45,8 @@ void encode(struct CodecState* state, s16* input, int numSamples, u8* output)
     
     bufferstep = 1;
 
-    for ( ; numSamples > 0 ; numSamples-- ) {
+    for ( ; numSamples > 0 ; numSamples-- )
+    {
 	val = *inp++;
 
 	/* Step 1 - compute difference with previous value */
@@ -63,19 +66,22 @@ void encode(struct CodecState* state, s16* input, int numSamples, u8* output)
 	delta = 0;
 	vpdiff = (step >> 3);
 	
-	if ( diff >= step ) {
+        if ( diff >= step )
+        {
 	    delta = 4;
 	    diff -= step;
 	    vpdiff += step;
 	}
 	step >>= 1;
-	if ( diff >= step  ) {
+        if ( diff >= step  )
+        {
 	    delta |= 2;
 	    diff -= step;
 	    vpdiff += step;
 	}
 	step >>= 1;
-	if ( diff >= step ) {
+        if ( diff >= step )
+        {
 	    delta |= 1;
 	    vpdiff += step;
 	}
@@ -101,9 +107,12 @@ void encode(struct CodecState* state, s16* input, int numSamples, u8* output)
 	step = stepsizeTable[index];
 
 	/* Step 6 - Output value */
-	if ( bufferstep ) {
+        if ( bufferstep )
+        {
 	    outputbuffer = (delta << 4) & 0xf0;
-	} else {
+        }
+        else
+        {
 	    *outp++ = (delta & 0x0f) | outputbuffer;
 	}
 	bufferstep = !bufferstep;
@@ -139,12 +148,16 @@ void decode(struct CodecState* state, u8* input, int numSamples, s16* output)
 
     bufferstep = 0;
     
-    for ( ; numSamples > 0 ; numSamples-- ) {
+    for ( ; numSamples > 0 ; numSamples-- )
+    {
 	
 	/* Step 1 - get the delta value */
-	if ( bufferstep ) {
+        if ( bufferstep )
+        {
 	    delta = inputbuffer & 0xf;
-	} else {
+        }
+        else
+        {
 	    inputbuffer = *inp++;
 	    delta = (inputbuffer >> 4) & 0xf;
 	}

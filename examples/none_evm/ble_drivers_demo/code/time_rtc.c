@@ -4,7 +4,12 @@
 #include "co_printf.h"
 #include "os_timer.h"
 #include "driver_system.h"
+#include "driver_pmu_regs.h"
+#include "driver_rtc.h"
+#include "driver_pmu.h"
 
+//#define USE_BB_BASE_CNT       //use baseband basic cnt as clock counter
+#define USE_PMU_RTC_CNT         //use pmu rtc cnt as clock counter
 
 typedef struct clock_param
 {
@@ -30,6 +35,7 @@ clock_param_t clock_env =
 
 static uint32_t last_ke_time = 0;
 #define RTC_10MS_MAX_CNT ((1L<<23) - 1)
+#define PMU_RTC_MAX_CNT (0xffffffff)
 
 uint32_t ke_time(void);
 int get_days(int, int, int);   //返回从公元元年算起，某年某月某日是第几天， 用这个数字算星期几
@@ -95,19 +101,35 @@ int day_of_week(int year, int month, int day)
 /*************clock handle***************/
 void clock_hdl(void)
 {
+#ifdef USE_BB_BASE_CNT
     uint32_t cur_base_time = ke_time();
     uint32_t diff;
     if(cur_base_time >= last_ke_time)
         diff = cur_base_time - last_ke_time;
     else
         diff = cur_base_time + RTC_10MS_MAX_CNT + 1 - last_ke_time;
-
     //co_printf("base:%d,diff:%d\r\n",ke_time(),diff);
     if( diff > 100 )
     {
         last_ke_time += 100;
         if( last_ke_time > RTC_10MS_MAX_CNT)
             last_ke_time -= (RTC_10MS_MAX_CNT+1);
+#endif
+#ifdef USE_PMU_RTC_CNT
+    uint32_t cur_base_time = rtc_get_value();
+    uint32_t diff;
+    if(cur_base_time >= last_ke_time)
+        diff = cur_base_time - last_ke_time;
+    else
+        diff = cur_base_time + 1 + (PMU_RTC_MAX_CNT - last_ke_time);
+
+    uint32_t count_in_1s = pmu_get_rc_clk(false);
+    //co_printf("cur_base:%d,last_base:%d,diff:%d,cnt_1s:%d\r\n",cur_base_time,last_ke_time,diff,count_in_1s);
+    
+    if( diff > count_in_1s )
+    {
+        last_ke_time += count_in_1s;
+#endif
         clock_env.sec++;
 
         if(clock_env.sec>=60)
@@ -139,6 +161,7 @@ void clock_hdl(void)
                 }
             }
         }//min hdl
+        //co_printf("h:%d-m:%d-s:%d\r\n",clock_env.hour,clock_env.min,clock_env.sec);
     }
 }
 
@@ -157,6 +180,16 @@ void demo_rtc_timer_func(void * arg)
 
 void demo_rtc_start_timer(void)
 {
+#ifdef USE_PMU_RTC_CNT
+    if(ool_read(PMU_REG_SYSTEM_STATUS) == 0)    //firset power_on
+    {
+        co_printf("1st powr on\r\n");
+        rtc_init();
+        last_ke_time = rtc_get_value();
+    }
+	co_printf("rtc:%d\r\n",rtc_get_value());
+#endif
+
     os_timer_init(&demo_rtc_timer,demo_rtc_timer_func,NULL);
     os_timer_start(&demo_rtc_timer,500,1);
 }

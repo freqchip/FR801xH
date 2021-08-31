@@ -39,10 +39,9 @@
 #define GATT_PROP_INDI                  (1<<5)  //!< Attribute is able to send indication
 #define GATT_PROP_AUTH_SIG_WRTIE        (1<<6)  //!< Attribute supports authenticated signed write
 #define GATT_PROP_EXTEND_PROP           (1<<7)  //!< Attribute supports extended properities
-
 #define GATT_PROP_WRITE                 (1<<8)  //!< Attribute is Writable (support both write_req and write_cmd)
-#define GATT_PROP_AUTHEN_READ           (1<<9)  //!< Read requires Authentication
-#define GATT_PROP_AUTHEN_WRITE          (1<<10)  //!< Write requires Authentication
+#define GATT_PROP_AUTHEN                (1<<9)  //!< Attribute requires Authentication
+
 /** @} End GATT_PERMIT_BITMAPS_DEFINES */
 
 /** @defgroup GATT_OPERATION_NAME GATT operation name define, used with GATTS/C_MSG_CMP_EVT
@@ -74,6 +73,12 @@ enum svc_att_type
     ATT_TYPE_CHAR_DECL,     /// Characteristic Declaration
     ATT_TYPE_VAL,      /// Characteristic Attribute Value
     ATT_TYPE_DESC,     /// Characteristic Attribute Descriptor
+};
+
+enum svc_change_type
+{
+    SVC_CHANGE_UUID,   /// change uuid 
+    SVC_CHANGE_PERM,   /// change property 
 };
 
 typedef struct
@@ -188,6 +193,7 @@ typedef struct
     uint8_t         conn_idx;   //!< Connection index
     uint8_t         svc_id;     //!< service id of this message
     uint16_t        att_idx;    //!< Attribute index of in the service table
+    uint16_t        handle;     //!< Attribute handle number in peer service
     union
     {
         gatt_msg_hdl_t  msg;    //!< GATT message, length, data pointer
@@ -195,7 +201,42 @@ typedef struct
     } param;
 } gatt_msg_t;
 
+/**
+* attributor and uuid change structure for created service.
+*/
+typedef struct
+{
+    uint8_t svc_id;     //!< service id of this svc changes
+    uint8_t att_idx;    //!< Attribute index of this svc changes
+    enum svc_change_type type;  //!< Type of this svc changes
+    union
+    {
+        gatt_uuid_t new_uuid;       //!< New Attribute UUID
+        uint16_t    new_prop;       //!< New Attribute properties, see @GATT_PROP_BITMAPS_DEFINES
+    } param;
+} svc_change_t;
 
+
+/// service handles
+struct svc_hdl
+{
+    /// start handle
+    uint16_t shdl;
+    /// end handle
+    uint16_t ehdl;
+};
+
+/**
+* For client, peer service group info, which will be stored to or loaded from flash. This structor is for func: gatt_client_direct_register
+*/
+typedef struct
+{
+    uint8_t svc_grp_idx;                            //!< Peer service group number. 
+    uint8_t client_info_att_nb;                     //!< Actual attributor number the client profile will use. 
+    struct svc_hdl svc[MAX_PEER_SVC_NUM];           //!< The start and end handles of each peer service group 
+    uint16_t link_chars_hdl[MAX_CLEINT_ATT_NUM];    //!< The handles of actual attributor, which the client profile will use. 
+    uint16_t link_descs_hdl[MAX_CLEINT_ATT_NUM];    //!< The handles of actual attributor configuration, which the client profile will use. 
+} gatt_stored_peer_svc_info_t;
 
 /*********************************************************************
  * @fn      gatt_msg_handler
@@ -252,6 +293,16 @@ typedef struct
     uint8_t     client_id;      //!< Service ID among all services in current system. 
     uint8_t     att_idx;        //!< Attribute id number in its service attribute table. 
 } gatt_client_read_t;
+
+/**
+* BLE client read by uuid format.
+*/
+typedef struct
+{
+    uint8_t     conidx;         //!< Connection index
+    uint8_t     client_id;      //!< Service ID among all services in current system. 
+    gatt_uuid_t uuid;        //!< Attribute id number in its service attribute table. 
+} gatt_client_read_by_uuid_t;
 
 /**
 * BLE client enable ntf format.
@@ -375,18 +426,60 @@ uint8_t gatt_add_client(gatt_client_t *p_client);
 void gatt_add_client_uuid(gatt_uuid_t att_tb[], uint8_t att_nb, uint8_t conn_idx, uint16_t handles[]);
 
 /*********************************************************************
- * @fn      gatt_change_svc_uuid
+ * @fn      gatt_delete_svc
  *
- * @brief   Change service UUID after service is added.
+ * @brief   Delete services which is created already
+ *          svc_uuid - pointer to services uuid buffer.
+ *          uuid_size - services uuid size.
+
+ * @param   None
  *
- * @param   svc_id      - profile svc_id.
- *          att_idx     - idx in profile service attribute table
- *          new_uuid    - new uuid to be set
- *          uuid_len    - new uuid len.
+ * @return  None.
+
+   example :   //in this case, delete gap & gatt services.
+   func()
+   {
+       uint16_t svc_uuid = 0x1801;
+       gatt_delete_svc((uint8_t *)&svc_uuid,2);
+       svc_uuid = 0x1800;
+       gatt_delete_svc((uint8_t *)&svc_uuid,2);
+   }
+ */
+void gatt_delete_svc(uint8_t *svc_uuid,uint8_t uuid_size);
+
+/*********************************************************************
+ * @fn      gatt_get_svc_hdl
+ *
+ * @brief   Gat att start handle & end handle of services, which is created already
+ *
+ * @param   svc_uuid - pointer to services uuid buffer.
+ *          uuid_size - services uuid size.
+ *          svc_shdl - service first att handle. 
+ *          svc_ehdl - service last att handle. 
+ *
+ * @return  0, successful.  -1, fail to find service
+
+   example :   //in this case, get start handle and end handle of gap services.
+   func()
+   {
+       uint16_t svc_uuid = 0x1801;
+       uint16_t gap_svc_shdl = 0;
+       uint16_t gap_svc_ehdl = 0;
+       gatt_get_svc_hdl((uint8_t *)&svc_uuid,2,&gap_svc_shdl,,&gap_svc_ehdl);
+   }
+ */
+int gatt_get_svc_hdl(uint8_t *svc_uuid,uint8_t uuid_size,uint16_t *svc_shdl,uint16_t *svc_ehdl);
+
+/*********************************************************************
+ * @fn      gatt_change_svc
+ *
+ * @brief   Change service UUID Or Property after service is added.
+ *
+ * @param   svc_change - svc attributor new settings. detail setting refer to type svc_change_t
  *
  * @return  None.
  */
-void gatt_change_svc_uuid(uint8_t svc_id,uint8_t att_idx,uint8_t *new_uuid,uint8_t uuid_len);
+void gatt_change_svc(svc_change_t svc_change);
 
 /*********************************************************************
  * @fn      gatt_change_client_uuid
@@ -427,6 +520,38 @@ void gatt_discovery_all_peer_svc(uint8_t client_id,uint8_t conidx);
  * @return  None.
  */
 void gatt_discovery_peer_svc(uint8_t client_id, uint8_t conidx, uint8_t uuid_len, uint8_t *group_uuid);
+
+
+/*********************************************************************
+ * @fn      gatt_client_direct_register
+ *
+ * @brief   No need to discover peer device service, if peer svc info is know, use this func directly regist peer servcie group.
+ *
+ * @param   client_id   - client information.
+ *          conidx      -
+ *          uuid_len    -
+ *          group_uuid  -
+ *
+ * @return  None.
+ example:
+ 
+    case GAP_EVT_MASTER_CONNECT:
+    {
+        gatt_stored_peer_svc_info_t peer_svc
+        peer_svc.svc_grp_idx = 2;
+        peer_svc.svc[0].shdl = 0x10;
+        peer_svc.svc[0].ehdl = 0x14;
+        peer_svc.svc[1].shdl = 0x16;
+        peer_svc.svc[1].ehdl = 0x1A;
+        peer_svc.client_info_att_nb = 3;
+        peer_svc.link_chars_hdl[0] = 0x10;
+        peer_svc.link_chars_hdl[1] = 0x13;
+        peer_svc.link_chars_hdl[2] = 0x14;
+        gatt_client_direct_register(event->param.master_connect.conidx,peer_svc);
+    }
+    break;
+ */
+void gatt_client_direct_register(uint8_t conidx,gatt_stored_peer_svc_info_t peer_svc);
 
 /*********************************************************************
  * @fn      gatt_client_write_req
@@ -486,6 +611,31 @@ void gatt_client_enable_ntf_ind(gatt_client_enable_ntf_t ntf_enable_att,bool ntf
 void gatt_client_read(gatt_client_read_t read_att);
 
 /*********************************************************************
+ * @fn      gatt_client_read_by_uuid
+ *
+ * @brief   Read request by uuid, you can read att value with this function directly after link is established
+ *          , no need to discovery peer service to get handles.
+ *
+ * @param   gatt_client_read_by_uuid_t   - client read info.
+ *
+ * @return  None.
+ example
+     case GAP_EVT_SLAVE_CONNECT:
+     {
+         gatt_client_read_by_uuid_t read_att =
+        {
+            .conidx = 0,
+            .client_id = client_id,
+            .uuid.size = 2,
+            .uuid.p_uuid = "\x00\x2A",
+        };
+        gatt_client_read_by_uuid(read_att);
+    }
+    break;
+ */
+void gatt_client_read_by_uuid(gatt_client_read_by_uuid_t read_att);
+
+/*********************************************************************
  * @fn      gatt_notification
  *
  * @brief   Sending notification.
@@ -537,6 +687,20 @@ void gatt_mtu_exchange_req(uint8_t conidx);
  * @return  MTU negotiated
  */
 uint16_t gatt_get_mtu(uint8_t conidx);
+
+/****************************************************************************************
+ * @fn      gatt_svc_changed_req
+ *
+ * @brief   Send svc changed indication pkt through svc_change attributor in GATT profile.
+ *          Normaly, master device will discovery services again after receiving this pkt.
+ *
+ * @param   conidx  - Link idx.
+ *          shdl - start handle of changed svc.
+ *          ehdl - end handle of changed svc.
+ *
+ * @return  MTU negotiated
+ */
+void gatt_svc_changed_req(uint8_t conidx,uint16_t shdl,uint16_t ehdl);
 
 /****************************************************************************************
  * @fn      gatt_msg_default

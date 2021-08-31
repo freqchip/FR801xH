@@ -91,6 +91,11 @@ void rtc_alarm(enum rtc_idx_t rtc_idx, uint32_t count_ms)
     ool_write(PMU_REG_RTC_SETTINGS, ool_read(PMU_REG_RTC_SETTINGS)|CO_BIT(rtc_idx+2)|CO_BIT(rtc_idx+4));
 }
 
+uint32_t rtc_get_value(void)
+{
+    return ool_read32(PMU_REG_RTC_VALUE_0);
+}
+
 /*********************************************************************
  * @fn      rtc_disalarm
  *

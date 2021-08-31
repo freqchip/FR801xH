@@ -128,6 +128,19 @@ void qspi_flash_enable_quad(void);
 __attribute__((section("ram_code"))) void flash_protect_enable(uint8_t wr_mode);
 
 /*********************************************************************
+ * @fn      flash_protect_enable1
+ *
+ * @brief   protect flash chip from erase and write.
+ *
+ * @param   wr_mode     - 0: write.enable with command 0x50
+ *                        1: write enable with command 0x06
+ *          mask        protect bits mask£¬ refer to flash spec
+ *
+ * @return  None.
+ */
+__attribute__((section("ram_code"))) void flash_protect_enable1(uint8_t wr_mode,uint8_t mask);
+
+/*********************************************************************
  * @fn      flash_protect_disable
  *
  * @brief   remove protection flash chip from erase and write.

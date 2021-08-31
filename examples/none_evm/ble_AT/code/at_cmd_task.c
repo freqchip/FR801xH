@@ -916,7 +916,6 @@ void at_recv_cmd_handler(struct recv_cmd_t *param)
                 case '=':
                 {
                     uint8_t *pos_int_end;
-                    gAT_buff_env.uart_param.uart_idx = 0;
                     pos_int_end = find_int_from_str(buff);
                     gAT_buff_env.uart_param.baud_rate = atoi((const char *)buff);
 
@@ -936,7 +935,16 @@ void at_recv_cmd_handler(struct recv_cmd_t *param)
                     sprintf((char *)at_rsp,"+UART:%d,%d,%d,%d\r\nOK",gAT_buff_env.uart_param.baud_rate,
                             gAT_buff_env.uart_param.data_bit_num,gAT_buff_env.uart_param.pari,gAT_buff_env.uart_param.stop_bit);
                     at_send_rsp((char *)at_rsp);
-                    uart_init(UART0,find_uart_idx_from_baudrate(gAT_buff_env.uart_param.baud_rate));
+                    //uart_init(UART0,find_uart_idx_from_baudrate(gAT_buff_env.uart_param.baud_rate));
+  
+                    uart_param_t param =
+                    {
+                        .baud_rate = gAT_buff_env.uart_param.baud_rate,
+                        .data_bit_num = gAT_buff_env.uart_param.data_bit_num,
+                        .pari = gAT_buff_env.uart_param.pari,
+                        .stop_bit = gAT_buff_env.uart_param.stop_bit,
+                    };
+                    uart_init1(UART0,param);
                 }
                 break;
                 default:
@@ -1078,20 +1086,32 @@ void at_recv_cmd_handler(struct recv_cmd_t *param)
                     break;
 
                 case '=':
+                    svc_change_t svc_change =
+                    {
+                        .svc_id = spss_svc_id,
+                        .type = UUID,
+                        .param.new_uuid.size = UUID_SIZE_16,
+                    };
                     if( *buff == 'A' && *(buff+1) == 'A')
                     {
                         str_to_hex_arr(buff+3,spss_uuids,UUID_SIZE_16);
-                        gatt_change_svc_uuid(spss_svc_id,0,spss_uuids,UUID_SIZE_16);
+                        svc_change.att_idx = 0;
+                        memcpy(svc_change.param.new_uuid.p_uuid,spss_uuids,UUID_SIZE_16);
+                        gatt_change_svc(svc_change);
                     }
-                    if( *buff == 'B' && *(buff+1) == 'B')
+                    else if( *buff == 'B' && *(buff+1) == 'B')
                     {
                         str_to_hex_arr(buff+3,spss_uuids + UUID_SIZE_16,UUID_SIZE_16);
-                        gatt_change_svc_uuid(spss_svc_id,2,spss_uuids + UUID_SIZE_16,UUID_SIZE_16);
+                        svc_change.att_idx = 2;
+                        memcpy(svc_change.param.new_uuid.p_uuid,spss_uuids + UUID_SIZE_16,UUID_SIZE_16);
+                        gatt_change_svc(svc_change);
                     }
-                    if( *buff == 'C' && *(buff+1) == 'C')
+                    else if( *buff == 'C' && *(buff+1) == 'C')
                     {
                         str_to_hex_arr(buff+3,spss_uuids + UUID_SIZE_16*2,UUID_SIZE_16);
-                        gatt_change_svc_uuid(spss_svc_id,6,spss_uuids + UUID_SIZE_16*2,UUID_SIZE_16);
+                        svc_change.att_idx = 6;
+                        memcpy(svc_change.param.new_uuid.p_uuid,spss_uuids + UUID_SIZE_16*2,UUID_SIZE_16);
+                        gatt_change_svc(svc_change);
                     }
                     *(buff+3 + UUID_SIZE_16*2) = 0;
 

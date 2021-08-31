@@ -105,8 +105,16 @@ __attribute__((section("ram_code"))) void user_entry_after_sleep_imp(void)
     system_set_port_pull(GPIO_PD4, true);
     system_set_port_mux(GPIO_PORT_D, GPIO_BIT_4, PORTD4_FUNC_UART0_RXD);
     system_set_port_mux(GPIO_PORT_D, GPIO_BIT_5, PORTD5_FUNC_UART0_TXD);
-    uart_init(UART0, find_uart_idx_from_baudrate(gAT_buff_env.uart_param.baud_rate));
-    //uart_init_x(gAT_buff_env.uart_param);
+    //uart_init(UART0, find_uart_idx_from_baudrate(gAT_buff_env.uart_param.baud_rate));
+    uart_param_t param =
+    {
+        .baud_rate = gAT_buff_env.uart_param.baud_rate,
+        .data_bit_num = gAT_buff_env.uart_param.data_bit_num,
+        .pari = gAT_buff_env.uart_param.pari,
+        .stop_bit = gAT_buff_env.uart_param.stop_bit,
+    };
+    uart_init1(UART0,param);
+
     NVIC_EnableIRQ(UART0_IRQn);
 
     NVIC_EnableIRQ(PMU_IRQn);

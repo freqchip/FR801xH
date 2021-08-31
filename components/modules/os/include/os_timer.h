@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define TIM_ID_NOT_USE (0xFF)
 
 typedef void(* os_timer_func_t)(void *parg);
   /**

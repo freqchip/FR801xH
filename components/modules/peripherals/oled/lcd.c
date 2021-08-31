@@ -20,6 +20,7 @@
 #include "driver_gpio.h"
 #include "driver_iomux.h"
 #include "driver_pmu.h"
+#include <string.h>
 
 
 #define DEV_V_1_4  (1)  //FR8016H DEV1.4
@@ -918,6 +919,18 @@ void lcd_show_mul_con(void)
     }
 	
 
+}
+
+void lcd_show_multicon_data(uint8_t *data,uint8_t len){
+    uint8_t LCD_ShowStringBuff1[3] = {0};
+    uint8_t LCD_ShowStringBuff2[100] = {0};
+    LCD_Fill(0,150,239,239,BACK_COLOR);
+    for(uint8_t i=0;i<len;i++){
+        if(i>=50)break;
+        sprintf((char *)LCD_ShowStringBuff1,"%x",*(data+i));
+        strcat(LCD_ShowStringBuff2,LCD_ShowStringBuff1);
+    }
+    LCD_ShowString(0,150,LCD_ShowStringBuff2,WHITE);
 }
 #else
 

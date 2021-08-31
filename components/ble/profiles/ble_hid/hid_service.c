@@ -167,7 +167,7 @@ static const uint8_t hid_report_map[] =
 const uint8_t ext_report_ref_uuid[] = UUID16_ARR(0x00);
 
 
-static uint8_t hid_svc_id = 0;
+uint8_t hid_svc_id = 0;
 
 // HID report information table
 static hid_report_ref_t  hid_rpt_info[HID_NUM_REPORTS];
@@ -229,7 +229,7 @@ const gatt_attribute_t hid_profile_att_table[] =
     
     [HID_INFO_IDX]                  =   { 
                                             { UUID_SIZE_2, UUID16_ARR(HID_INFORMATION_UUID) },
-                                            GATT_PROP_AUTHEN_READ, 
+                                            GATT_PROP_READ | GATT_PROP_AUTHEN,     //GATT_PROP_AUTHEN
                                             sizeof(hid_info_value), 
                                             NULL,
                                         },

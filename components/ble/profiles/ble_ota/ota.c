@@ -412,57 +412,49 @@ void app_otas_recv_data(uint8_t conidx,uint8_t *p_data,uint16_t len)
                 {
                     first_pkt.malloced_pkt_num = ROUND(256,rsp_hdr->rsp.write_data.length);
                     first_pkt.buf = os_malloc(rsp_hdr->rsp.write_data.length * first_pkt.malloced_pkt_num);
+                    first_pkt.len = 0;
+                }
+            }
+#ifdef OTA_CRC_CHECK			
+            if((rsp_hdr->rsp.write_data.base_address !=(ota_addr_check + ota_addr_check_len)) &&
+                (rsp_hdr->rsp.write_data.base_address !=ota_addr_check)){//for OTA write addr error  no req
+                co_printf("rsp_hdr->rsp.write_data.base_address = %x\r\nota_addr_check=%x,\r\nlen = %d\r\nSUM=%x\r\n",rsp_hdr->rsp.write_data.base_address,ota_addr_check,len,rsp_hdr->rsp.write_data.base_address + len);
+                os_free(req);
+                ota_stop(OTA_ADDR_ERROR);
+                return;
+            }else{
+                ota_addr_check = rsp_hdr->rsp.write_data.base_address;
+                ota_addr_check_len = rsp_hdr->rsp.write_data.length;
+            }
+#endif				
+            if( rsp_hdr->rsp.write_data.base_address <= (new_bin_base + rsp_hdr->rsp.write_data.length *(first_pkt.malloced_pkt_num-1)) )
+            {
+                if(first_pkt.buf != NULL)
+                {
                     uint8_t * tmp = p_data + (OTA_HDR_OPCODE_LEN+OTA_HDR_LENGTH_LEN)+sizeof(struct write_data_cmd);
-                    first_pkt.len = rsp_hdr->rsp.write_data.length;
-                    memcpy(first_pkt.buf,tmp,first_pkt.len);
-#ifdef OTA_CRC_CHECK					
-                    ota_addr_check_len = rsp_hdr->rsp.write_data.length;
-#endif					
+                    memcpy(first_pkt.buf + first_pkt.len,tmp,rsp_hdr->rsp.write_data.length);
+                    first_pkt.len += rsp_hdr->rsp.write_data.length;
+                    //change firmware version in buffed pkt.
+                    if(first_pkt.len >= rsp_hdr->rsp.write_data.length * first_pkt.malloced_pkt_num)
+                    {
+                        uint32_t firmware_offset = (uint32_t)&((struct jump_table_t *)0x01000000)->firmware_version- 0x01000000;
+                        if( *(uint32_t *)((uint32_t)first_pkt.buf + firmware_offset) <= app_otas_get_curr_firmwave_version() )
+                        {
+                            uint32_t new_bin_ver = app_otas_get_curr_firmwave_version() + 1;
+                            co_printf("old_ver:%08X\r\n",*(uint32_t *)((uint32_t)first_pkt.buf + firmware_offset));
+                            co_printf("new_ver:%08X\r\n",new_bin_ver);
+                            //checksum_minus = new_bin_ver - *(uint32_t *)((uint32_t)first_pkt.buf + firmware_offset);
+                            *(uint32_t *)((uint32_t)first_pkt.buf + firmware_offset) = new_bin_ver;
+                        }
+                        //write data from 256 ~ rsp_hdr->rsp.write_data.length * first_pkt.malloced_pkt_num
+                        app_otas_save_data(new_bin_base + 256,first_pkt.buf + 256,first_pkt.len - 256);
+                    }
                 }
             }
             else
-            {
-#ifdef OTA_CRC_CHECK			
-                if((rsp_hdr->rsp.write_data.base_address !=(ota_addr_check + ota_addr_check_len)) &&
-                    (rsp_hdr->rsp.write_data.base_address !=ota_addr_check)){//for OTA write addr error  no req
-                    co_printf("rsp_hdr->rsp.write_data.base_address = %x\r\nota_addr_check=%x,\r\nlen = %d\r\nSUM=%x\r\n",rsp_hdr->rsp.write_data.base_address,ota_addr_check,len,rsp_hdr->rsp.write_data.base_address + len);
-                    os_free(req);
-                    ota_stop(OTA_ADDR_ERROR);
-                    return;
-                }else{
-                    ota_addr_check = rsp_hdr->rsp.write_data.base_address;
-                    ota_addr_check_len = rsp_hdr->rsp.write_data.length;
-                }
-#endif				
-                if( rsp_hdr->rsp.write_data.base_address <= (new_bin_base + rsp_hdr->rsp.write_data.length *(first_pkt.malloced_pkt_num-1)) )
-                {
-                    if(first_pkt.buf != NULL)
-                    {
-                        uint8_t * tmp = p_data + (OTA_HDR_OPCODE_LEN+OTA_HDR_LENGTH_LEN)+sizeof(struct write_data_cmd);
-                        memcpy(first_pkt.buf + first_pkt.len,tmp,rsp_hdr->rsp.write_data.length);
-                        first_pkt.len += rsp_hdr->rsp.write_data.length;
-                    }
-                }
-                else
-                    app_otas_save_data(rsp_hdr->rsp.write_data.base_address,
-                                       p_data + (OTA_HDR_OPCODE_LEN+OTA_HDR_LENGTH_LEN)+sizeof(struct write_data_cmd),
-                                       rsp_hdr->rsp.write_data.length);
-                //change firmware version in buffed pkt.
-                if(first_pkt.len >= rsp_hdr->rsp.write_data.length * first_pkt.malloced_pkt_num)
-                {
-                    uint32_t firmware_offset = (uint32_t)&((struct jump_table_t *)0x01000000)->firmware_version- 0x01000000;
-                    if( *(uint32_t *)((uint32_t)first_pkt.buf + firmware_offset) <= app_otas_get_curr_firmwave_version() )
-                    {
-                        uint32_t new_bin_ver = app_otas_get_curr_firmwave_version() + 1;
-                        co_printf("old_ver:%08X\r\n",*(uint32_t *)((uint32_t)first_pkt.buf + firmware_offset));
-                        co_printf("new_ver:%08X\r\n",new_bin_ver);
-                        //checksum_minus = new_bin_ver - *(uint32_t *)((uint32_t)first_pkt.buf + firmware_offset);
-                        *(uint32_t *)((uint32_t)first_pkt.buf + firmware_offset) = new_bin_ver;
-                    }
-                    //write data from 256 ~ rsp_hdr->rsp.write_data.length * first_pkt.malloced_pkt_num
-                    app_otas_save_data(new_bin_base + 256,first_pkt.buf + 256,first_pkt.len - 256);
-                }
-            }
+                app_otas_save_data(rsp_hdr->rsp.write_data.base_address,
+                                   p_data + (OTA_HDR_OPCODE_LEN+OTA_HDR_LENGTH_LEN)+sizeof(struct write_data_cmd),
+                                   rsp_hdr->rsp.write_data.length);
         }
         break;
         case OTA_CMD_READ_DATA:

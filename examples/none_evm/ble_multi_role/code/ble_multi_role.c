@@ -427,7 +427,7 @@ void multi_role_init(void)
     gap_set_cb_func(app_gap_evt_cb);
 
     gap_bond_manager_init(BLE_BONDING_INFO_SAVE_ADDR, BLE_REMOTE_SERVICE_SAVE_ADDR, 8, true);
-    gap_bond_manager_delete_all();
+    //gap_bond_manager_delete_all();
     
     // set local device name
     uint8_t local_name[] = "Simple Multi Role";

@@ -7,7 +7,7 @@
 #define OTA_HDR_RESULT_LEN          1
 #define OTA_HDR_OPCODE_LEN          1
 #define OTA_HDR_LENGTH_LEN          2
-//#define OTA_CRC_CHECK
+#define OTA_CRC_CHECK
 #ifdef OTA_CRC_CHECK
 #define OTA_TIMEOUT  5000
 #endif

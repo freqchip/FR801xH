@@ -206,6 +206,8 @@ typedef enum
 
     GAP_EVT_SLAVE_CONNECT,          //!< Connected as slave role
     GAP_EVT_MASTER_CONNECT,         //!< Connected as master role
+    GAP_EVT_SLAVE_RAW_CONNECT,      //!< Connected as slave role, this event is generated earlier than GAP_EVT_SLAVE_CONNECT and GAP_EVT_ADV_END
+    GAP_EVT_MASTER_RAW_CONNECT,     //!< Connected as master role, this event is generated earlier than GAP_EVT_MASTER_CONNECT
     GAP_EVT_DISCONNECT,             //!< Disconnected
     GAP_EVT_LINK_PARAM_REQ,         //!< Parameter update request
     GAP_EVT_LINK_PARAM_REJECT,      //!< Parameter update rejected
@@ -616,6 +618,14 @@ void gap_start_advertising(uint16_t duration);
 * @return  None.
 */
 void gap_stop_advertising(void);
+/*****************functions for adv1 ****************/
+void gap_set_advertising_param1(gap_adv_param_t *param);
+void gap_set_advertising_data1(uint8_t *p_adv_data, uint16_t adv_data_len);
+void gap_set_advertising_rsp_data1(uint8_t *p_rsp_data, uint16_t rsp_data_len);
+void gap_set_per_adv_data1(uint8_t *p_per_adv_data, uint16_t per_adv_data_len);
+void gap_start_advertising1(uint16_t duration);
+void gap_stop_advertising1(void);
+/*****************functions for adv1 ****************/
 
 /*********************************************************************
 * @fn      gap_start_scan
@@ -985,6 +995,19 @@ void gap_bond_manager_init(uint32_t flash_addr,uint32_t svc_flash_addr,uint8_t m
 void gap_bond_manager_get_info(uint8_t device_idx, gap_bond_info_t *bond_info);
 
 /*********************************************************************
+ * @fn      gap_bond_manager_add_info
+ *
+ * @brief   Add and store bond info to flash. 
+ *
+ * @param   ltk         - pointer to knowen ltk buffer,len is 16Bytes.
+ *          irk         - pointer to knowen irk buffer,len is 16Bytes.
+ *          peer_addr   - pointer to peer address buffer,len is 6Bytes.
+ *
+ * @return  None.
+ */
+void gap_bond_manager_add_info( uint8_t *ltk, uint8_t *irk,uint8_t *peer_addr);
+
+/*********************************************************************
  * @fn      gap_bond_manager_delete_all
  *
  * @brief   Erase all bond information.
@@ -1006,6 +1029,28 @@ void gap_bond_manager_delete_all(void);
  * @return  None.
  */
 void gap_bond_manager_delete(uint8_t *mac_addr, uint8_t addr_type);
+
+/*********************************************************************
+ * @fn      gap_sec_set_fixed_ltk
+ *
+ * @brief   Set fixed ltk which wil be used during bonding, and encrption. 
+ *
+ * @param   ltk         - pointer to knowen ltk buffer,len is 16Bytes.
+ *
+ * @return  None.
+ */
+void gap_sec_set_fixed_ltk(uint8_t *ltk);
+
+/*********************************************************************
+ * @fn      gap_sec_clr_fixed_ltk
+ *
+ * @brief   Clean fixed ltk,if the fixed ltk is set. 
+ *
+ * @param   None
+ *
+ * @return  None.
+ */
+void gap_sec_clr_fixed_ltk(void);
 
 /*********************************************************************
  * @fn      gap_security_param_init
@@ -1129,6 +1174,5 @@ void gap_set_channel_map(gap_channel_map_t *channel_map);
 
 
 #endif // end of #ifndef GAP_API_H
-
 
 

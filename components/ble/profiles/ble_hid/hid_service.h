@@ -126,7 +126,7 @@ typedef struct
 /*
  * GLOBAL VARIABLES (全局变量)
  */
-
+extern uint8_t hid_svc_id;
 /*
  * LOCAL VARIABLES (本地变量)
  */

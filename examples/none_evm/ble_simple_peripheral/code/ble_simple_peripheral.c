@@ -123,8 +123,9 @@ void app_gap_evt_cb(gap_event_t *p_event)
         case GAP_EVT_SLAVE_CONNECT:
         {
             co_printf("slave[%d],connect. link_num:%d\r\n",p_event->param.slave_connect.conidx,gap_get_connect_num());
-			gap_security_req(p_event->param.slave_connect.conidx);
-		}
+            os_timer_start(&update_param_timer,4000,0);
+            //gap_security_req(p_event->param.slave_connect.conidx);
+        }
         break;
 
         case GAP_EVT_DISCONNECT:
@@ -220,7 +221,16 @@ void simple_peripheral_init(void)
     gap_set_dev_name(local_name, sizeof(local_name));
     os_timer_init( &update_param_timer,param_timer_func,NULL);
 
-    
+#if 0		//security encryption
+    gap_security_param_t param =
+    {
+        .mitm = true,		
+        .ble_secure_conn = true,		//not enable security encryption
+        .io_cap = GAP_IO_CAP_NO_INPUT_NO_OUTPUT,		//ble device has input ability, will input pin code. 
+        .pair_init_mode = GAP_PAIRING_MODE_WAIT_FOR_REQ,	//need bond
+        .bond_auth = true,	//need bond auth
+    };
+#endif 
 #if 0
     gap_security_param_t param =
     {

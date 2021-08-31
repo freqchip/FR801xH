@@ -147,7 +147,7 @@ __attribute__((aligned(64))) uint32_t patch_map[16] =
     0xBF00DF04,
     0x46080141,
     (uint32_t)llc_patch_1,
-    0x0001F8FF,
+    0x0001F8FD,
     0xEB01201B, // 8
     0xBF00BF00,
     0xBF00DF0a, //10
@@ -175,6 +175,9 @@ __attribute__((section("ram_code"))) void patch_init(void)
         i--;
         if(patch_elements[i].patch_pc)
         {
+            //if(i < 5  )  //if you want to use jlink to do debug, not enable patch4
+                //;//FPB_CompUnset(i);
+            //else
             FPB_CompSet(patch_elements[i].patch_pc, 0x00, i);
         }
         else
@@ -185,11 +188,10 @@ __attribute__((section("ram_code"))) void patch_init(void)
 
     FPB_Enable();
 #ifdef FLASH_PROTECT
-    *(volatile uint32_t *)0x500B0000|= (1<<14);
+//    *(volatile uint32_t *)0x500B0000|= (1<<14);
 #endif
 }
-//struct patch_element_t patch_elements_tmp[2];
-//uint32_t patch_map_tmp[2];
+
 __attribute__((section("ram_code"))) void patch_set_entry(void)
 {
     patch_elements[9].patch_pc = 0x00002b70; 
@@ -346,7 +348,7 @@ __attribute__((section("ram_code"))) void flash_write(uint32_t offset, uint32_t 
     GLOBAL_INT_DISABLE();
     disable_cache();
 #ifdef FLASH_PROTECT
-    *(volatile uint32_t *)0x500B0000 &= (~(1<<14));
+//    *(volatile uint32_t *)0x500B0000 &= (~(1<<14));
     flash_protect_disable(0);
 #endif	
     if(((offset >= 2*__jump_table.image_size) 
@@ -372,7 +374,12 @@ __attribute__((section("ram_code"))) void flash_write(uint32_t offset, uint32_t 
             else {
                 uint32_t base_addr = offset & (~(1*1024*1024-1));
                 uint32_t internal_offset = offset & (1*1024*1024-1);
+                uint32_t current_remap_address, remap_size;
+                current_remap_address = system_regs->remap_virtual_addr;
+                remap_size = system_regs->remap_length;
 
+                system_regs->remap_virtual_addr = 0;
+                system_regs->remap_length = 0;
                 *(volatile uint32_t *)0x500b0024 = 0x01000000+base_addr;
                 last_space = 1*1024*1024-internal_offset;
                 if(last_space >= length) {
@@ -385,12 +392,14 @@ __attribute__((section("ram_code"))) void flash_write(uint32_t offset, uint32_t 
                 length -= last_space;
                 
                 *(volatile uint32_t *)0x500b0024 = 0x01000000;
+                system_regs->remap_virtual_addr = current_remap_address;
+                system_regs->remap_length = remap_size;
             }
         }
     }
 #ifdef FLASH_PROTECT
     flash_protect_enable(0);
-    *(volatile uint32_t *)0x500B0000 |= (1<<14);
+//    *(volatile uint32_t *)0x500B0000 |= (1<<14);
 #endif	
     enable_cache(true);
     GLOBAL_INT_RESTORE();
@@ -403,7 +412,7 @@ __attribute__((section("ram_code"))) void flash_erase(uint32_t offset, uint32_t 
     GLOBAL_INT_DISABLE();
     disable_cache();
 #ifdef FLASH_PROTECT
-    *(volatile uint32_t *)0x500B0000 &= (~(1<<14));
+//    *(volatile uint32_t *)0x500B0000 &= (~(1<<14));
     flash_protect_disable(0);
 #endif	
     if(((offset >= 2*__jump_table.image_size) 
@@ -416,7 +425,7 @@ __attribute__((section("ram_code"))) void flash_erase(uint32_t offset, uint32_t 
         flash_erase_(offset, length);
 #ifdef FLASH_PROTECT
     flash_protect_enable(0);
-    *(volatile uint32_t *)0x500B0000 |= (1<<14);
+//    *(volatile uint32_t *)0x500B0000 |= (1<<14);
 #endif	
     enable_cache(true);
     GLOBAL_INT_RESTORE();
@@ -442,9 +451,14 @@ __attribute__((section("ram_code"))) void flash_read(uint32_t offset, uint32_t l
         else {
             uint32_t base_addr = offset & (~(1*1024*1024-1));
             uint32_t internal_offset = offset & (1*1024*1024-1);
+            uint32_t current_remap_address, remap_size;
+            current_remap_address = system_regs->remap_virtual_addr;
+            remap_size = system_regs->remap_length;
 
             GLOBAL_INT_DISABLE();
             disable_cache();
+            system_regs->remap_virtual_addr = 0;
+            system_regs->remap_length = 0;
             *(volatile uint32_t *)0x500b0024 = 0x01000000+base_addr;
             last_space = 1*1024*1024-internal_offset;
             if(last_space >= length) {
@@ -457,6 +471,8 @@ __attribute__((section("ram_code"))) void flash_read(uint32_t offset, uint32_t l
             length -= last_space;
             
             *(volatile uint32_t *)0x500b0024 = 0x01000000;
+            system_regs->remap_virtual_addr = current_remap_address;
+            system_regs->remap_length = remap_size;
             enable_cache(true);
             GLOBAL_INT_RESTORE();
         }

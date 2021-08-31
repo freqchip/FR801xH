@@ -1885,6 +1885,11 @@ static __INLINE void FPB_SetRemap(uint32_t address)
 }
 
 void FPB_CompSet(uint32_t address, uint8_t map_type, uint8_t index);
+static __INLINE void FPB_CompUnset(uint8_t index)
+{
+    FPB->COMP[index] = (FPB->COMP[index] & (~(FPB_COMP_ADDR_Msk|FPB_COMP_REPLACE_Msk)))
+                            | (0x1) | (0x10143e0 & FPB_COMP_ADDR_Msk) | (0x01 << FPB_COMP_REPLACE_Pos);
+}
 
 /*@} end of CMSIS_core_DebugFunctions */
 

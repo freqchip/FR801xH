@@ -64,6 +64,8 @@
 #define GATT_RECONNECT_ADDR_UUID                        0x2A03 // Reconnection Address
 #define GATT_PERI_CONN_PARAM_UUID                       0x2A04 // Peripheral Preferred Connection Parameters
 #define GATT_SERVICE_CHANGED_UUID                       0x2A05 // Service Changed
+#define GATT_ADDR_RESOL_SUPP                            0x2AA6 // Central Address Resolution supported
+#define GATT_RSLV_PRIV_ADDR_ONLY                        0x2AC9 // Resolvable Private Address only
 
 /*
  * WARNING: The 16-bit UUIDs are assigned by the Bluetooth SIG and published

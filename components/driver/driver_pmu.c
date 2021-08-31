@@ -18,10 +18,12 @@
 #include "sys_utils.h"
 #include "driver_plf.h"
 #include "driver_pmu.h"
+#include "driver_adc.h"
 #include "driver_efuse.h"
 #include "driver_system.h"
+#include "driver_flash.h"
 
-#define ENABLE_SYSTEM_PROTECTION_IN_LVD             0
+#define ENABLE_SYSTEM_PROTECTION_IN_LVD             1
 
 /*
  * EXTERNAL FUNCTIONS
@@ -389,40 +391,62 @@ void pmu_set_sys_power_mode(enum pmu_sys_pow_mode_t mode)
  */
 void pmu_bg_trim(uint32_t trim_value)
 {
-    uint8_t bfb_trim;
-    const uint16_t bfb_trim_value_table[] = {1337,1362,1387,1412,1437,1462,1487,1512,1537,1562,1587,1612,1637,1662,1687,1712,};
-    uint16_t bfb_value, bg_value, bg_diff;
-    uint8_t bg_config;
-#define BG_DEFAULT_CONFIG           8
+    uint32_t data[5];
+    uint16_t ref_internal = 0,ref_avdd = 0;
+    uint8_t bg_set = 0;
+    uint8_t correction_value = 0;
+    uint16_t internal_adj, avdd_adj;
 
-    bfb_trim = (uint8_t)((trim_value>>4)&0xf);
-    bfb_value = bfb_trim_value_table[((bfb_trim & 0x01) << 3) | ((bfb_trim & 0x02) << 1) | ((bfb_trim & 0x04) >> 1) | ((bfb_trim & 0x08) >> 3)];
-    bg_value = (bfb_value * 4) / 5; // bg/1.2 = bfb/1.5
-    if(bg_value > 1200) {
-        bg_diff = bg_value - 1200;
-        bg_diff <<= 1;
-        bg_diff /= 25;
-        if(bg_diff >= BG_DEFAULT_CONFIG) {
-            bg_config = 0;
+    if(trim_value != 0)
+    {
+        ref_internal = ((trim_value >> 12) & 0xfff);
+        ref_avdd = (trim_value & 0xfff);
         }
-        else {
-            bg_config = BG_DEFAULT_CONFIG - bg_diff;
+        else
+        {
+        flash_OTP_read(0x1000, 5*sizeof(uint32_t), (void *)data);
+        if(data[0] == 0x31303030) {
+            ref_internal = ((400*1024)/(data[3] / 32) + (800*1024)/(data[4] / 32)) / 2;
+            ref_avdd = ((2400*1024)/(data[1] / 32) + (800*1024)/(data[2] / 32)) / 2;
         }
-        adc_ref_internal_trim -= (BG_DEFAULT_CONFIG - bg_config);
     }
-    else {
-        bg_diff = 1200 - bg_value;
-        bg_diff <<= 1;
-        bg_diff /= 25;
-        if(bg_diff >= BG_DEFAULT_CONFIG) {
-            bg_config = 0xf;
-        }
-        else {
-            bg_config = BG_DEFAULT_CONFIG + bg_diff;
-        }
-        adc_ref_internal_trim += (BG_DEFAULT_CONFIG - bg_config);
+
+    if(ref_avdd >= 2925)
+    {
+        bg_set = ((ref_avdd*10-29000u)*100)/(125*29);
     }
-    ool_write(PMU_REG_BG_CTRL, (ool_read(PMU_REG_BG_CTRL) & 0xf0) | bg_config);
+    else if(ref_avdd < 2875)
+        {
+        bg_set = ((29000u-ref_avdd*10)*100)/(125*29);
+        }
+        else
+        {
+        bg_set = 0;       
+        }
+    correction_value = bg_set % 10;
+    bg_set = bg_set / 10;
+    if(correction_value >= 5u)
+    {
+        bg_set = bg_set+1;
+    }
+
+    internal_adj = 15 * bg_set;
+    avdd_adj = 37 * bg_set;
+   
+    if(ref_avdd >= 2900)
+    {
+        ool_write(PMU_REG_BG_CTRL, (ool_read(PMU_REG_BG_CTRL)&0xF0)|(8-bg_set));
+        ref_internal -= internal_adj;
+        ref_avdd -= avdd_adj;
+    }
+    else
+    {
+        ool_write(PMU_REG_BG_CTRL, (ool_read(PMU_REG_BG_CTRL)&0xF0)|(8+bg_set));
+        ref_internal += internal_adj;
+        ref_avdd += avdd_adj;
+    }
+
+    adc_set_ref_voltage(ref_avdd, ref_internal);
 }
 
 /*********************************************************************
@@ -605,7 +629,7 @@ void pmu_sub_init(void)
 #endif
 
 #ifndef CFG_FT_CODE
-    pmu_bg_trim(data0);
+    pmu_bg_trim(data2);
 #endif
 }
 
@@ -812,15 +836,19 @@ void pmu_port_wakeup_func_set(uint32_t gpios)
     ool_write32(PMU_REG_PORTA_SEL, ool_read32(PMU_REG_PORTA_SEL) & (~gpios));
 
     /* set gpio function mux */
-    for(uint8_t j=0; j<4; j++) {
+    for(uint8_t j=0; j<4; j++)
+    {
         uint8_t tmp_gpio;
         uint16_t current_mux;
         uint8_t mux_reg_addr = mux_regs_addr[j];
         tmp_gpio = (gpios>>(j*8)) & 0xff;
-        if(tmp_gpio) {
+        if(tmp_gpio)
+        {
             current_mux = ool_read16(mux_reg_addr);
-            for(uint8_t i=0; i<8; i++) {
-                if(tmp_gpio & (1<<i)) {
+            for(uint8_t i=0; i<8; i++)
+            {
+                if(tmp_gpio & (1<<i))
+                {
                     current_mux &= (~(PMU_PORT_MUX_MSK<<(i*2)));
                     current_mux |= (PMU_PORT_MUX_GPIO<<(i*2));
                 }
@@ -879,7 +907,10 @@ __attribute__((weak)) __attribute__((section("ram_code"))) void otd_isr_ram(void
 }
 __attribute__((weak)) __attribute__((section("ram_code"))) void pmu_gpio_isr_ram(void)
 {
-    co_printf("gpio new value = 0x%08x.\r\n", ool_read32(PMU_REG_GPIOA_V));
+    //co_printf("gpio new value = 0x%08x.\r\n", ool_read32(PMU_REG_GPIOA_V));
+    //uart_putc_noint_no_wait(UART1, 'g');
+    uint32_t gpio_value = ool_read32(PMU_REG_GPIOA_V);
+    ool_write32(PMU_REG_PORTA_LAST, gpio_value);
 }
 
 __attribute__((weak)) __attribute__((section("ram_code"))) void onkey_isr_ram(void)
@@ -896,6 +927,10 @@ __attribute__((weak)) __attribute__((section("ram_code"))) void onkey_isr_ram(vo
         pmu_disable_isr2(PMU_ISR_ONKEY_LOW_EN);
         pmu_enable_isr2(PMU_ISR_ONKEY_HIGH_EN);
     }
+}
+
+__attribute__((weak)) void adc_set_ref_voltage(uint16_t ref_avdd, uint16_t ref_internal)
+{
 }
 
 __attribute__((section("ram_code"))) void pmu_isr_ram_C(unsigned int* hardfault_args)
@@ -986,13 +1021,15 @@ __attribute__((section("ram_code"))) void pmu_isr_ram_C(unsigned int* hardfault_
     if(pmu_irq_st & PMU_ISR_GPIO_STATE)
     {
 #if ENABLE_SYSTEM_PROTECTION_IN_LVD == 1
-        if(ool_read(PMU_REG_GPIOC_V) & CO_BIT(4)) {
+        if(ool_read(PMU_REG_GPIOC_V) & CO_BIT(4))
+        {
             co_printf("lvd.\r\n");
             system_lvd_protect_handle();
         }
 #else
         uint8_t portc_value = ool_read(PMU_REG_GPIOC_V);
-        if(portc_value & CO_BIT(4)) {
+        if(portc_value & CO_BIT(4))
+        {
             ool_write(PMU_REG_PORTC_LAST, portc_value);
         }
 #endif

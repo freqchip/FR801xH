@@ -157,7 +157,7 @@ enum
 /*
  * GLOBAL VARIABLES (全局变量)
  */
-
+extern uint8_t dis_svc_id;
 
 /*
  * LOCAL VARIABLES (本地变量)

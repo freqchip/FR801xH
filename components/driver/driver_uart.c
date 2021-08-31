@@ -90,13 +90,17 @@ void uart_init1(uint32_t uart_addr, uart_param_t param)
     else
     {
         uart_reg->lcr.parity_enable = 1;
-        if(param.pari == 1)
+        if(param.pari == 2)
             uart_reg->lcr.even_enable = 1;
         else
             uart_reg->lcr.even_enable = 0;
     }
+    uart_reg->lcr.sp = 0;
 
-    uart_reg->lcr.stop = param.stop_bit;
+    if(param.stop_bit == 1)
+        uart_reg->lcr.stop = 0;
+    else 
+        uart_reg->lcr.stop = 1;
 
     /*fifo*/
     uart_reg->u3.fcr.data = UART_FIFO_TRIGGER | FCR_FIFO_ENABLE;

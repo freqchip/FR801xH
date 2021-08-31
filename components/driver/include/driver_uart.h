@@ -167,10 +167,31 @@ Bit     Name        Type    Function Description
 */
 struct uart_lcr_t   /*Line Control Register*/
 {
+//Word Length 00= 5 bits, 01= 6 bits, 10= 7 bits, 11= 8 bits
     uint32_t word_len:2;
+/*Stop Bits
+0= one stop bit after data bits
+1= 1.5 stop bit for a 5-bit data character,OR 2 stop bits for a 6-,7-,or 8-bit character.
+*/
     uint32_t stop:1;
+/*
+Parity Enable Bit
+1: parity check enable
+0: parity check disable
+*/
     uint32_t parity_enable:1;
+/*
+Even Parity Enable
+1: even parity is selected.
+0: odd parity is selected.
+*/
     uint32_t even_enable:1;
+/*
+Stick Parity Bit .
+If bits[5:3] are 111, parity bit is checked as 0.
+If bits[5:3] are 101, parity bit is checked as 1.
+If bit5 is 0, stick parity is disabled
+*/
     uint32_t sp:1;
     uint32_t bc:1;
     uint32_t divisor_access:1;
@@ -375,11 +396,10 @@ typedef void (*uart_int_callback) (void*, uint8_t);
 
 typedef struct
 {
-    uint32_t baud_rate;
-    uint8_t uart_idx;
-    uint8_t data_bit_num;
-    uint8_t pari;
-    uint8_t stop_bit;
+    uint32_t baud_rate;     //uart baudrate
+    uint8_t data_bit_num;   //payload data len, valid num:5,6,7,8
+    uint8_t pari;           //0 = parity is disable,  1 = odd parity is enable, 2 = even parity is enable,
+    uint8_t stop_bit;   //1 = stop bit is 1,  2 = stop bit is 1.5 for 5bit data OR stop bit is 2 for 6,7,8 bit data,
 } uart_param_t;
 
 /*
@@ -573,8 +593,7 @@ void uart1_write_for_hci(uint8_t *bufptr, uint32_t size, uart_int_callback callb
  *  example:    
     uart_param_t param =
     {
-        .baud_rate = 409600,
-        .uart_idx = 0,
+        .baud_rate = 115200,
         .data_bit_num = 8,
         .pari = 0,
         .stop_bit = 1,

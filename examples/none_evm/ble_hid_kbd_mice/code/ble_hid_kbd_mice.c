@@ -69,7 +69,7 @@ void hid_start_adv(void)
     // GAP - Advertisement data (max size = 31 bytes, though this is
     // best kept short to conserve power while advertisting)
     // GAP-广播包的内容,最长31个字节.短一点的内容可以节省广播时的系统功耗.
-    uint8_t adv_data[0x1C] =
+    uint8_t adv_data[] =
     {
         // appearance
         0x03,   // length of this data
@@ -89,7 +89,7 @@ void hid_start_adv(void)
     // GAP - Scan response data (max size = 31 bytes, though this is
     // best kept short to conserve power while advertisting)
     // GAP-Scan response内容,最长31个字节.短一点的内容可以节省广播时的系统功耗.
-    uint8_t scan_rsp_data[0x1F] =
+    uint8_t scan_rsp_data[] =
     {
         // complete name 设备名字
         0x11,   // length of this data

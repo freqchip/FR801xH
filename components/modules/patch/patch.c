@@ -12,6 +12,14 @@
 
 #define PATCH_MAP_BASE_ADDR             0x20002000
 
+/* Suppress warning messages */
+#if defined(__CC_ARM)
+// Suppress warning message: extended constant initialiser used
+#pragma diag_suppress 1296
+#elif defined(__ICCARM__)
+#elif defined(__GNUC__)
+#endif
+
 struct patch_element_t
 {
     uint32_t patch_pc;
@@ -178,7 +186,7 @@ __attribute__((section("ram_code"))) void patch_init(void)
             //if(i < 5  )  //if you want to use jlink to do debug, not enable patch4
                 //;//FPB_CompUnset(i);
             //else
-            FPB_CompSet(patch_elements[i].patch_pc, 0x00, i);
+                FPB_CompSet(patch_elements[i].patch_pc, 0x00, i);
         }
         else
         {

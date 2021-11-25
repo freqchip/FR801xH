@@ -1086,10 +1086,11 @@ void at_recv_cmd_handler(struct recv_cmd_t *param)
                     break;
 
                 case '=':
+                {
                     svc_change_t svc_change =
                     {
                         .svc_id = spss_svc_id,
-                        .type = UUID,
+                        .type = SVC_CHANGE_UUID,
                         .param.new_uuid.size = UUID_SIZE_16,
                     };
                     if( *buff == 'A' && *(buff+1) == 'A')
@@ -1118,7 +1119,7 @@ void at_recv_cmd_handler(struct recv_cmd_t *param)
                     sprintf((char *)at_rsp,"+%s:\r\nDATA:UUID\r\n\r\nsuccessful",buff+3);
                     at_send_rsp((char *)at_rsp);
                     break;
-
+                }
                 default:
                     break;
             }

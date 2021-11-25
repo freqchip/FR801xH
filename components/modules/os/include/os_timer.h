@@ -57,7 +57,7 @@ void os_timer_destroy(os_timer_t *ptimer);
  *			????Timer.
  *
  * @param   ptimer - pointer to the timer buffer.
- *			ms - expire of the timer with milliseconds
+ *          ms - expire of the timer with milliseconds. rang:[0 , ((1<<22)-1)*10]
  *          repeat_flag - repeat or one shot timer
  * @return  None.
  */

@@ -30,11 +30,14 @@
 #define GAP_ADV_MODE_NON_CONN_NON_SCAN      0x03    /// non-scannalbe & non-connectable
 #define GAP_ADV_MODE_NON_CONN_SCAN          0x04    /// scannalbe & non-connectable
 #define GAP_ADV_MODE_HDC_DIRECT             0x05    /// non-scannalbe & connectable
-#define GAP_ADV_MODE_BEACON                 0x06    /// scannalbe(no scan rsp) & non-connectable
+#define GAP_ADV_MODE_BEACON                 0x06    /// non-scannalbe & non-connectable
 
 #define GAP_ADV_MODE_EXTEND_CONN_UNDIRECT   0x11
 #define GAP_ADV_MODE_EXTEND_CONN_DIRECT     0x12
-#define GAP_ADV_MODE_EXTEND_NON_CONN_SCAN   0x14
+#define GAP_ADV_MODE_EXTEND_NON_CONN_SCAN   0x13
+#define GAP_ADV_MODE_EXTEND_NON_CONN_SCAN_DIRECT        0x14
+#define GAP_ADV_MODE_EXTEND_NON_CONN_NON_SCAN           0x15
+#define GAP_ADV_MODE_EXTEND_NON_CONN_NON_SCAN_DIRECT    0x16
 
 #define GAP_ADV_MODE_PER_ADV_UNDIRECT       0x21
 #define GAP_ADV_MODE_PER_ADV_DIRECT         0x22
@@ -234,6 +237,13 @@ typedef enum
     GAP_SEC_EVT_BOND_FAIL,          //!< Link bond is failed
     GAP_SEC_EVT_BOND_SUCCESS,       //!< Link bond is successful
     GAP_SEC_EVT_PIN_CODE_REQ,       //!< Link bond request pin code inpu
+
+    GAP_LECB_CONNECT,           //!< Connected as lecb
+    GAP_LECB_DISCONNECT,        //!< disconnected as lecb
+    GAP_LECB_ADD_CREDIT,        //!< peer credit is added
+    GAP_LECB_SEND_CMPT,         //!< lecb send pkt cmpeleted
+    GAP_LECB_RECV,              //!< lecb recv pkt
+
 } gap_event_type_t;
 
 #define MAC_ADDR_LEN         6
@@ -408,10 +418,82 @@ typedef struct
     uint8_t reason;             //!< Reason of enc fail
 } gap_evt_bond_fail_t;
 
+
+
+// LE credit based connection indication
+typedef struct
+{
+    /// Status
+    uint8_t  status;
+    /// LE Protocol/Service Multiplexer
+    uint16_t le_psm;
+    /// Local Channel identifier
+    uint16_t local_cid;
+    ///  Destination Credit for the LE Credit Based Connection
+    uint16_t peer_credit;
+    /// Maximum SDU size
+    uint16_t peer_mtu;
+    /// Maximum Packet size
+    uint16_t peer_mps;
+} gap_lecb_conn_param_t;
+
+// LE credit based disconnect indication
+typedef struct
+{
+    /// Local Channel identifier
+    uint16_t local_cid;
+    /// Reason
+    uint8_t reason;
+} gap_lecb_disconnect_t;
+
+// LE credit based credit addition indication
+typedef struct
+{
+    /// Local Channel identifier
+    uint16_t local_cid;
+    /// Destination added credit (relative value)
+    uint16_t peer_added_credit;
+} gap_lecb_credit_add_t;
+
+// LECB send completed
+typedef struct
+{
+    /// Status of request.
+    uint8_t status;
+    /// Channel ID
+    uint16_t cid;
+    /// Number of peer credit used - only relevant for LECB
+    uint16_t credit;
+} gap_lecb_send_cmpt_t;
+
+struct lecb_sdu
+{
+    /// Channel Identifier
+    uint16_t cid;
+    /// Number of credit used
+    uint16_t credit;
+    /// SDU Data length
+    uint16_t length;
+    /// data
+    uint8_t *p_data;
+};
+// LECB pkt recv
+typedef struct
+{
+    /// Status information
+    uint8_t status;
+    /// offset value information
+    uint16_t offset;
+    /// SDU information
+    struct lecb_sdu sdu;
+} gap_lecb_recv_t;
+
+
 // GAT event structure
 typedef struct
 {
     gap_event_type_t                    type;                   //!< GAP event type
+    uint8_t                             conidx;                 //!< link index,
     union
     {
         conn_peer_param_t               slave_connect;          //!< Peer slave device connection parameters
@@ -437,10 +519,16 @@ typedef struct
         uint8_t                         master_encrypt_conidx;  //!< Connection index of encrypted link, role as master
         gap_evt_master_enc_fail_t       master_encrypt_fail;    //!< encrption fail reason & conidx, role as master
         uint8_t                         slave_encrypt_conidx;   //!< Connection index of encrypted link, role as slave
-        uint8_t                         bond_start_conidx;      //!< link index, in which link, bond started
-        uint8_t                         bond_success_conidx;    //!< link index, in which link, bond successed 
-        gap_evt_bond_fail_t             bond_fail;              //!< link index, in which link, bond failed 
+        uint8_t                         bond_start_conidx;   //!< link index, in which link, bond started
+        uint8_t                         bond_success_conidx;   //!< link index, in which link, bond successed 
+        gap_evt_bond_fail_t             bond_fail;   //!< link index, in which link, bond failed 
         uint8_t                         bond_pin_code_req_conidx; //!< link index, in which link, bond procedure need pin code input
+
+        gap_lecb_conn_param_t           lecb_conn;
+        gap_lecb_disconnect_t           lecb_disconn;
+        gap_lecb_credit_add_t           lecb_credit_add;
+        gap_lecb_recv_t                 lecb_data;
+        gap_lecb_send_cmpt_t            lecb_send_cmp;
     } param;
 } gap_event_t;
 
@@ -492,7 +580,7 @@ typedef struct
     uint8_t  io_cap;            //!< IO capbilities, see @ GAP_IO_CAP_DEFINES
     uint8_t  pair_init_mode;    //!< If initialize pairing procesure or not, see @ GAP_PAIRING_MODE_DEFINES
     bool     bond_auth;         //!< Bond_auth enable/disable,if true, then will distribute encryption key,and will check this key_req when bonding.
-    uint32_t password;          //!< Password.
+    uint32_t password;          //!< Password.range:[000,000 , 999,999]. The keboard device shall ensure that all 6 digits are inputed ¡§C including zeros.
 } gap_security_param_t;
 
 // Gap bond information
@@ -517,6 +605,14 @@ typedef struct
     uint8_t     map[5];//5-byte channel map array
 }gap_channel_map_t;
 
+enum ble_addr_type
+{
+    BLE_ADDR_TYPE_PUBLIC,                    //addr is set by user,value is fixed forever
+    BLE_ADDR_TYPE_PRIVATE,                   //addr is set by user,value is fixed after device is power on
+    BLE_ADDR_TYPE_RANDOM_RESOVABLE,          //addr is generated by stack with IRK
+    BLE_ADDR_TYPE_RANDOM_NONE_RESOVABLE,     //addr is generated by stack,value is randomly
+};
+
 /*
  * GLOBAL VARIABLES
  */
@@ -537,6 +633,16 @@ typedef struct
  * PUBLIC FUNCTIONS
  */
 
+/*********************************************************************
+ * @fn      ble_set_addr_type
+ *
+ * @brief   used to configure ble mac addr type.
+ *
+ * @param   addr_type     - .
+ *
+ * @return  None.
+ */
+void ble_set_addr_type(enum ble_addr_type addr_type);
 
 /*********************************************************************
  * @fn      gap_set_cb_func
@@ -692,10 +798,10 @@ void gap_start_conn(mac_addr_t *addr, uint8_t addr_type, uint16_t min_itvl, uint
 *
 * @param    addr        - peer device mac addr.
 *           addr_type   - peer device mac addr type.
-*           min_itvl    - minimum connection inteval. uint: 1.25ms
-*           max_itvl    - maximum connection inteval. uint: 1.25ms
-*           slv_latency - number of slave latency.
-*           timeout     - supervision timeout of the link. uint: 10ms
+*           min_itvl    - minimum connection inteval. uint: 1.25ms, rang:(6,3200)
+*           max_itvl    - maximum connection inteval. uint: 1.25ms, rang:(6,3200)
+*           slv_latency - number of slave latency. rang:[0,499)
+*           timeout     - supervision timeout of the link. uint: 10ms, rang:(10 ,3200)
 *
 * @return   None.
 */
@@ -1036,10 +1142,13 @@ void gap_bond_manager_delete(uint8_t *mac_addr, uint8_t addr_type);
  * @brief   Set fixed ltk which wil be used during bonding, and encrption. 
  *
  * @param   ltk         - pointer to knowen ltk buffer,len is 16Bytes.
+ *          rand_nb     - pointer to knowen random number buffer,len is 8Bytes.
+ *          ediv        - knowen ediv value.
  *
  * @return  None.
  */
-void gap_sec_set_fixed_ltk(uint8_t *ltk);
+
+void gap_sec_set_fixed_ltk(uint8_t *ltk,uint8_t *rand_nb,uint16_t ediv);
 
 /*********************************************************************
  * @fn      gap_sec_clr_fixed_ltk

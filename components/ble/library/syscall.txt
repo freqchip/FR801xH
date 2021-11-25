@@ -669,7 +669,7 @@
 0x0000e5fd T lld_adv_end_ind_handler
 0x0000f995 T lld_adv_init
 0x0000fd1d T lld_adv_rand_addr_update
-0x0000fd89 T lld_adv_rep_ind_handler
+#0x0000fd89 T lld_adv_rep_ind_handler
 0x00010235 T lld_adv_restart
 0x00010391 T lld_adv_scan_rsp_data_update
 0x000103d5 T lld_adv_start

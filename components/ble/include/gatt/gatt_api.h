@@ -140,8 +140,8 @@ typedef enum
     GATTC_MSG_IND_REQ,          //!< GATT client indication received
     GATTC_MSG_READ_IND,         //!< GATT client read response received
     GATTC_MSG_CMP_EVT,          //!< GATT client message complete event
-    GATTC_MSG_LINK_CREATE,
-    GATTC_MSG_LINK_LOST,
+    GATTC_MSG_LINK_CREATE,      //!< A Link is established
+    GATTC_MSG_LINK_LOST,        //!< A Link is lost
     GATTC_MSG_SVC_REPORT,       //!< GATT client received peer service report
 } gatt_msg_evt_t;
 

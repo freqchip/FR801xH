@@ -97,8 +97,9 @@
 #define CSC_SERV_UUID                   0x1816  // Cycling Speed and Cadence
 #define CYCPWR_SERV_UUID                0x1818  // Cycling Power
 #define LOC_NAV_SERV_UUID               0x1819  // Location and Navigation
+#define IPSS_SERV_UUID                  0x1820  // Internet Protocol Support
 #define FITMACHINE_SERV_UUID            0x1826  // Fitmachine
-  
+
 /**
  * GATT Characteristic UUIDs
  */
@@ -178,7 +179,7 @@
 #define POS_QUALITY_UUID                0x2A69  // Position Quality
 #define LN_FEATURE_UUID                 0x2A6A  // LN Feature
 #define LN_CTRL_PT_UUID                 0x2A6B  // LN Control Point  
-  
+
 #define GATT_UUID_FITNESS_MACHINE_FEATURE           0x2ACC
 #define GATT_UUID_TREADMILL_DATA                    0x2ACD //跑步机数据
 #define GATT_UUID_CROSS_TRAINER_DATA                0x2ACE //椭圆机数据

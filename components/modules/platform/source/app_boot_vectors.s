@@ -167,8 +167,7 @@ uart0_isr_ram
 uart1_isr_ram
                 B       .
                 ENDP
-                NOP
-				END
+                END
 					
 					
 					

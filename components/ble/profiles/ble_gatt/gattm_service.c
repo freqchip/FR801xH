@@ -149,7 +149,7 @@ static uint16_t gattm_gatt_msg_handler(gatt_msg_t *p_msg)
             break;
 
         case GATTC_MSG_CMP_EVT:
-            gap_gatt_op_cmp_handler((gatt_op_cmp_t*)&(p_msg->param.op));
+            //gap_gatt_op_cmp_handler((gatt_op_cmp_t*)&(p_msg->param.op));
             break;
         case GATTC_MSG_LINK_CREATE:
             break;

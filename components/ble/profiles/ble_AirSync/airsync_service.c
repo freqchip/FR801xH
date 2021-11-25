@@ -18,6 +18,7 @@
 #include "os_task.h"
 #include "os_mem.h"
 #include "airsync_service.h"
+#include "driver_plf.h"
 
 
 /*
@@ -70,15 +71,19 @@ enum EmErrorCode
     EEC_userExitWxAccount = -10,    //user exit Wetchat
 };
 
-typedef struct
+
+
+/*
+ * EXTERNAL VARIABLES (外部变量)
+ */__PACKED typedef struct
 {
     bool need_assemble;
     uint16_t tot_len;
     uint16_t cur_recv_len;
     uint8_t *buf;
-} airsync_recv_data_t;
+}airsync_recv_data_t GCC_PACKED;
 
-typedef struct fixhead
+__PACKED typedef struct fixhead
 {
     uint8_t magic_number;
     uint8_t ver;
@@ -86,11 +91,7 @@ typedef struct fixhead
     uint16_t cmd_id;
     uint16_t seq;
     uint8_t value[];
-} airsync_pkt_t;
-
-/*
- * EXTERNAL VARIABLES (外部变量)
- */
+}airsync_pkt_t GCC_PACKED;
 
 /*
  * GLOBAL VARIABLES (全局变量)

@@ -1,6 +1,9 @@
 #ifndef  __AUDIO_ENCODE_H
 #define  __AUDIO_ENCODE_H
 
+#include "adpcm.h"
+#include "adpcm_ima_fangtang.h"
+//#include "adpcm_ima_dyc1.h"
 
 /*
 NOTE:
@@ -36,6 +39,11 @@ typedef struct
     uint8_t bitpool;
 } encode_param_t;
 
+
+extern struct CodecState adpcm_state_;
+#ifdef ADPCM_IMA_FANGTANG
+extern adpcm_state adpcm_ima_fangtang_state;
+#endif
 void audio_encoder_init(enum encode_type type);
 void audio_encode_start(encode_param_t param);
 void audio_encode_stop(void);

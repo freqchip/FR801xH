@@ -96,10 +96,10 @@ void audio_encode_start(encode_param_t param)
         26      60
         27      62
         29      66
-		    32      72
-				34			76
-				35			78
-				36			80
+        32      72
+        34      76
+        35      78
+        36      80
     */
     encoder_env.block_size = sbc_get_codesize(encoder_env.sbc);     //0x100 = 256
 
@@ -108,7 +108,7 @@ void audio_encode_start(encode_param_t param)
         encoder_env.frame_size = encoder_env.block_size>>2;     //adpcm, fixed compressing rate == 4; frame_len = 64
         memset(&adpcm_state_,0x0,sizeof(adpcm_state_));
 #ifdef ADPCM_IMA_FANGTANG
-		memset(&adpcm_ima_fangtang_state,0x0,sizeof(adpcm_ima_fangtang_state));
+        memset(&adpcm_ima_fangtang_state,0x0,sizeof(adpcm_ima_fangtang_state));
 #endif
     }
     else

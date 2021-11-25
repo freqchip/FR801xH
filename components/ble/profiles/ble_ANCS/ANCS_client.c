@@ -20,7 +20,7 @@
 #include "gatt_sig_uuid.h"
 #include "sys_utils.h"
 #include "ANCS_client.h"
-
+#include "driver_plf.h"
 
 /*
  * MACROS (∫Í∂®“Â)
@@ -92,14 +92,14 @@ uint32_t social_notification_uid ;
 #define CATGRY_ID_LOCATION      (10)
 #define CATGRY_ID_ENTERTAINMENT (11)
 
-struct ancs_ntf_src
+__PACKED struct ancs_ntf_src
 {
     uint8_t event_id;
     uint8_t event_flags;
     uint8_t category_id;
     uint8_t category_cnt;
     uint32_t ntf_uid;
-};
+}GCC_PACKED;
 
 #define NTF_ATT_ID_APPLE        0
 #define NTF_ATT_ID_TITLE        1

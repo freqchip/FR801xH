@@ -68,10 +68,11 @@ void at_con_param_update(uint8_t conidx,uint16_t latency)
  */
 static void param_timer_func(void *arg)
 {
+    uint8_t conidx = *(uint8_t *)arg;
     if( gAT_buff_env.default_info.auto_sleep == true)
-        at_con_param_update((uint8_t)arg,15);
+        at_con_param_update(conidx,15);
     else
-        at_con_param_update((uint8_t)arg,0);
+        at_con_param_update(conidx,0);
 }
 
 /*********************************************************************
